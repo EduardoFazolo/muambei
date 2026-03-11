@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Price Trip
 
-## Getting Started
+Next.js app for comparing Brazilian prices across multiple stores.
 
-First, run the development server:
+## Current collectors
+
+- Mercado Livre via HTML scraping
+- Amazon BR via HTML scraping
+- KaBuM via embedded JSON payload
+- Americanas via public VTEX catalog API
+- Magalu via external `pitchlabs` command slot
+
+## Development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+bun install
+bun run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## API
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+GET /api/search?q=iphone%2015
+```
 
-## Learn More
+The response contains:
 
-To learn more about Next.js, take a look at the following resources:
+- normalized offers
+- provider status and latency
+- global price-ordered ranking
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Pitchlabs integration
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Set `PITCHLABS_COMMAND` if you want the fifth collector to run a local agentic browser flow.
 
-## Deploy on Vercel
+The command must print JSON to stdout using either of these shapes:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```json
+[
+  {
+    "title": "Smartphone Apple iPhone 15 128GB",
+    "price": 4999.9,
+    "url": "https://example.com/oferta",
+    "image": "https://example.com/img.jpg",
+    "seller": "Magalu",
+    "installments": "10x de R$ 499,99",
+    "shipping": "frete grátis"
+  }
+]
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+or
+
+```json
+{
+  "offers": []
+}
+```
+
+Example env shape:
+
+```bash
+PITCHLABS_COMMAND='pitchlabs scrape --store {store} --query "{query}"'
+```
