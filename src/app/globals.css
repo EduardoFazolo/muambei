@@ -183,10 +183,10 @@ button:disabled {
   border-radius: 999px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.04);
-  padding: 0.82rem 1.12rem;
+  padding: 0.5rem 0.875rem;
   font-family: var(--font-mono), monospace;
   font-size: 11px;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-0);
 }
@@ -200,7 +200,7 @@ button:disabled {
   border-color: rgba(252, 211, 77, 0.4);
   background: linear-gradient(135deg, rgba(252, 211, 77, 1), rgba(244, 157, 12, 1));
   color: #2a1602;
-  box-shadow: 0 14px 30px rgba(244, 157, 12, 0.22);
+  box-shadow: 0 4px 16px rgba(244, 157, 12, 0.28);
 }
 
 .action-pill-primary:hover {
@@ -210,7 +210,7 @@ button:disabled {
 .field-input,
 .search-input {
   width: 100%;
-  border-radius: 1.2rem;
+  border-radius: 0.75rem;
   border: 1px solid var(--line);
   background: rgba(0, 0, 0, 0.18);
   color: var(--ink-0);
@@ -218,14 +218,14 @@ button:disabled {
 }
 
 .search-input {
-  min-height: 4.6rem;
-  padding: 1.15rem 1.2rem;
-  font-size: clamp(1.1rem, 1.5vw, 1.35rem);
+  min-height: 3.5rem;
+  padding: 0.875rem 1rem;
+  font-size: clamp(1rem, 1.4vw, 1.15rem);
   line-height: 1.4;
 }
 
 .field-input {
-  padding: 0.92rem 1rem;
+  padding: 0.75rem 0.875rem;
 }
 
 .field-input::placeholder,
@@ -345,4 +345,115 @@ button:disabled {
   .page-grid {
     background-size: 92px 92px;
   }
+}
+
+/* ── Step panels ── */
+.step-panel {
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--surface-1);
+  backdrop-filter: blur(14px);
+  padding: 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+}
+
+.step-panel-locked {
+  opacity: 0.35;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ── Step number badge ── */
+.step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  letter-spacing: 0;
+}
+
+.step-num-active {
+  background: var(--brand-500);
+  color: #1a0800;
+}
+
+.step-num-done {
+  background: var(--good);
+  color: #0a1f14;
+}
+
+.step-num-idle {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ink-subtle);
+  border: 1px solid var(--line);
+}
+
+/* ── Offer cards ── */
+.offer-card {
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: rgba(0, 0, 0, 0.22);
+  padding: 1rem;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.offer-card:hover {
+  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.03);
+  transform: translateY(-1px);
+}
+
+.offer-card-selected {
+  border-color: rgba(252, 211, 77, 0.55);
+  background: rgba(252, 211, 77, 0.07);
+}
+
+/* ── Step CTA row ── */
+.step-cta {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* ── Inline workflow steps ── */
+.workflow-step-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.625rem;
+  background: rgba(0, 0, 0, 0.18);
+  padding: 0.625rem 0.875rem;
+}
+
+/* ── Summary metric box ── */
+.metric-box {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0.625rem;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.875rem;
+}
+
+/* ── Result panel ── */
+.result-panel {
+  border: 1px solid var(--line-strong);
+  border-radius: 0.875rem;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1.25rem;
+  backdrop-filter: blur(14px);
 }

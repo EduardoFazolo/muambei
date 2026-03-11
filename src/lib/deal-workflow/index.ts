@@ -1,3 +1,4 @@
+import { fetchExchangeRates } from "@/lib/exchange-rates";
 import {
   requestStructuredResearch,
   TripResearchError,
@@ -350,14 +351,21 @@ function normalizeTripInput(input: unknown): TripWorkflowInput {
   };
 }
 
-function overseasPrompt(input: OverseasWorkflowInput) {
+function overseasPrompt(
+  input: OverseasWorkflowInput,
+  rates: { usdToBrl: number; eurToBrl: number; fetchedAt: string },
+) {
   return [
     `Today's date is ${new Date().toISOString().slice(0, 10)}.`,
     "Research current public product prices with live web search.",
     "The buyer is based in Brazil and is comparing Brazil pricing to realistic purchase opportunities in the United States and Europe.",
     "Return only offers that look plausibly buyable by a traveler, with concrete retailer or marketplace sources.",
     "Favor direct product pages or strong commerce sources.",
-    "Estimate BRL equivalents conservatively.",
+    `IMPORTANT: Use ONLY the real-time exchange rates provided below to convert prices to BRL. Do NOT use your own estimated rates.`,
+    `Real-time exchange rates (fetched at ${rates.fetchedAt}):`,
+    `  USD → BRL: ${rates.usdToBrl.toFixed(4)}`,
+    `  EUR → BRL: ${rates.eurToBrl.toFixed(4)}`,
+    "Compute estimatedPriceBRL = priceLocal * exchange_rate. Show the calculation is honest and uses these exact rates.",
     "Use the Brazil reference price to estimate savings for every overseas offer.",
     "If an offer is in Europe, include the city or airport area a traveler would likely target.",
     "",
@@ -415,12 +423,13 @@ function lodgingPrompt(
 
 export async function researchOverseasProduct(input: unknown) {
   const normalized = normalizeOverseasInput(input);
+  const rates = await fetchExchangeRates();
   const result = await requestStructuredResearch<OverseasResearchModel>({
     schemaName: "overseas_product_research",
     schema: OVERSEAS_RESEARCH_SCHEMA,
     instructions:
       "You are a rigorous shopping analyst. Use live web search, favor current sources, and return only the requested JSON schema.",
-    input: overseasPrompt(normalized),
+    input: overseasPrompt(normalized, rates),
   });
 
   return {

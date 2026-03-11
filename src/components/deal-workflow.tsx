@@ -127,7 +127,7 @@ function stepTone(status: WorkflowStepStatus) {
 }
 
 function regionLabel(region: OverseasMarketOffer["region"]) {
-  return region === "united_states" ? "Estados Unidos" : "Europa";
+  return region === "united_states" ? "EUA" : "Europa";
 }
 
 function formatDate(value: string) {
@@ -136,7 +136,7 @@ function formatDate(value: string) {
 }
 
 function formatWindow(option: TicketResearchOption) {
-  return `${formatDate(option.departureWindow.start)} - ${formatDate(option.departureWindow.end)} / volta ${formatDate(option.returnWindow.start)} - ${formatDate(option.returnWindow.end)}`;
+  return `${formatDate(option.departureWindow.start)} – ${formatDate(option.departureWindow.end)} / volta ${formatDate(option.returnWindow.start)} – ${formatDate(option.returnWindow.end)}`;
 }
 
 function mergeStep(
@@ -233,48 +233,51 @@ async function readWorkflowStream<T>({
   }
 }
 
-function WorkflowRail({
-  title,
-  description,
-  steps,
+// ── UI Components ──────────────────────────────────────────────────────────
+
+function StepBadge({
+  n,
+  status,
 }: {
-  title: string;
-  description: string;
-  steps: WorkflowStep[];
+  n: number;
+  status: "active" | "done" | "idle";
 }) {
   return (
-    <article className="panel-soft rounded-[1.8rem] p-5">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="kicker text-[var(--brand-300)]">{title}</p>
-          <h3 className="mt-3 font-display text-3xl text-[var(--ink-0)]">
-            {description}
-          </h3>
-        </div>
-        <span className="code-chip">{steps.length} passos</span>
-      </div>
+    <div
+      className={`step-num ${
+        status === "done"
+          ? "step-num-done"
+          : status === "active"
+            ? "step-num-active"
+            : "step-num-idle"
+      }`}
+    >
+      {status === "done" ? "✓" : n}
+    </div>
+  );
+}
 
-      <div className="mt-5 space-y-3">
-        {steps.map((step) => (
-          <div
-            key={step.stepId}
-            className="rounded-[1.25rem] border border-white/8 bg-black/20 p-4"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-semibold text-[var(--ink-0)]">
-                {step.label}
-              </p>
-              <span className={`status-pill ${stepTone(step.status)}`}>
-                {step.status}
-              </span>
-            </div>
-            <p className="mt-2 text-sm leading-6 text-[var(--ink-muted)]">
-              {step.message}
+function InlineWorkflowSteps({ steps }: { steps: WorkflowStep[] }) {
+  return (
+    <div className="mt-4 space-y-2">
+      {steps.map((step) => (
+        <div key={step.stepId} className="workflow-step-row">
+          <span className={`status-pill shrink-0 ${stepTone(step.status)}`}>
+            {step.status}
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-[var(--ink-0)]">
+              {step.label}
             </p>
+            {step.message && (
+              <p className="mt-0.5 truncate text-xs text-[var(--ink-muted)]">
+                {step.message}
+              </p>
+            )}
           </div>
-        ))}
-      </div>
-    </article>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -283,8 +286,9 @@ function SourcePills({
 }: {
   sources: { label: string; url: string; note: string }[];
 }) {
+  if (sources.length === 0) return null;
   return (
-    <div className="mt-4 flex flex-wrap gap-2">
+    <div className="mt-3 flex flex-wrap gap-1.5">
       {sources.map((source) => (
         <a
           key={`${source.label}-${source.url}`}
@@ -312,54 +316,37 @@ function SearchOfferCard({
 }) {
   return (
     <article
-      className={`product-card rounded-[1.7rem] p-5 ${
-        selected ? "product-card-selected" : ""
-      }`}
+      onClick={onSelect}
+      className={`offer-card ${selected ? "offer-card-selected" : ""}`}
     >
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="kicker text-[var(--ink-muted)]">{offer.storeName}</p>
-          <h3 className="mt-3 text-xl font-semibold leading-7 text-[var(--ink-0)]">
-            {offer.title}
-          </h3>
-        </div>
-        <span className="code-chip">{offer.source}</span>
+      <div className="flex items-center justify-between gap-2">
+        <p className="kicker text-[var(--ink-subtle)]">{offer.storeName}</p>
+        {selected && (
+          <span className="status-pill tone-active">selecionado</span>
+        )}
       </div>
-
-      <div className="mt-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="kicker text-[var(--ink-subtle)]">Brasil agora</p>
-          <p className="mt-2 font-display text-5xl leading-none text-[var(--ink-0)]">
-            {money.format(offer.price)}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onSelect}
-          className={`action-pill ${selected ? "action-pill-primary" : ""}`}
-        >
-          {selected ? "Produto base" : "Usar produto"}
-        </button>
-      </div>
-
-      <div className="mt-5 flex flex-wrap gap-2">
-        {offer.installments ? (
-          <span className="meta-pill">{offer.installments}</span>
-        ) : null}
-        {offer.shipping ? <span className="meta-pill">{offer.shipping}</span> : null}
-        {offer.seller ? <span className="meta-pill">Seller {offer.seller}</span> : null}
-      </div>
-
-      <div className="mt-5 flex flex-wrap gap-3">
+      <p className="mt-2 line-clamp-2 text-sm font-medium leading-5 text-[var(--ink-0)]">
+        {offer.title}
+      </p>
+      <div className="mt-3 flex items-end justify-between gap-2">
+        <p className="font-display text-2xl leading-none text-[var(--ink-0)]">
+          {money.format(offer.price)}
+        </p>
         <a
           href={offer.url}
           target="_blank"
           rel="noreferrer"
-          className="action-pill"
+          onClick={(e) => e.stopPropagation()}
+          className="text-xs text-[var(--brand-300)] underline-offset-2 hover:underline"
         >
-          Abrir oferta
+          ver oferta ↗
         </a>
       </div>
+      {(offer.installments || offer.shipping) && (
+        <p className="mt-1.5 text-xs text-[var(--ink-subtle)]">
+          {[offer.installments, offer.shipping].filter(Boolean).join(" · ")}
+        </p>
+      )}
     </article>
   );
 }
@@ -373,78 +360,77 @@ function OverseasOfferCard({
   selected: boolean;
   onSelect: () => void;
 }) {
+  const confidenceTone =
+    offer.confidence === "high"
+      ? "completed"
+      : offer.confidence === "medium"
+        ? "running"
+        : "pending";
+
   return (
     <article
-      className={`product-card rounded-[1.7rem] p-5 ${
-        selected ? "product-card-selected" : ""
-      }`}
+      onClick={onSelect}
+      className={`offer-card ${selected ? "offer-card-selected" : ""}`}
     >
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="kicker text-[var(--brand-300)]">
-            {regionLabel(offer.region)} • {offer.city}, {offer.country}
-          </p>
-          <h3 className="mt-3 text-xl font-semibold leading-7 text-[var(--ink-0)]">
-            {offer.offerTitle}
-          </h3>
-          <p className="mt-2 text-sm text-[var(--ink-muted)]">
-            {offer.storeName} via {offer.purchaseChannel}
-          </p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="kicker text-[var(--brand-300)]">
+          {regionLabel(offer.region)} · {offer.city}
+        </p>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {selected && (
+            <span className="status-pill tone-active">selecionado</span>
+          )}
+          <span className={`status-pill ${stepTone(confidenceTone)}`}>
+            {offer.confidence}
+          </span>
         </div>
-        <span className={`status-pill ${stepTone(offer.confidence === "high" ? "completed" : offer.confidence === "medium" ? "running" : "pending")}`}>
-          {offer.confidence}
-        </span>
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-3">
-        <div className="rounded-[1.25rem] border border-white/8 bg-black/20 p-4">
-          <p className="kicker text-[var(--ink-subtle)]">Preco local</p>
-          <p className="mt-2 text-3xl font-semibold text-[var(--ink-0)]">
+      <p className="mt-2 line-clamp-2 text-sm font-medium leading-5 text-[var(--ink-0)]">
+        {offer.offerTitle}
+      </p>
+      <p className="mt-0.5 text-xs text-[var(--ink-muted)]">
+        {offer.storeName}
+      </p>
+
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        <div className="metric-box">
+          <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">
+            Local
+          </p>
+          <p className="mt-1 text-sm font-semibold text-[var(--ink-0)]">
             {offer.priceLocalDisplay}
           </p>
         </div>
-        <div className="rounded-[1.25rem] border border-white/8 bg-black/20 p-4">
-          <p className="kicker text-[var(--ink-subtle)]">Equivalente BRL</p>
-          <p className="mt-2 text-3xl font-semibold text-[var(--ink-0)]">
+        <div className="metric-box">
+          <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">
+            Em BRL
+          </p>
+          <p className="mt-1 text-sm font-semibold text-[var(--ink-0)]">
             {money.format(offer.estimatedPriceBRL)}
           </p>
         </div>
-        <div className="rounded-[1.25rem] border border-white/8 bg-black/20 p-4">
-          <p className="kicker text-[var(--ink-subtle)]">Diferenca</p>
-          <p className="mt-2 text-3xl font-semibold text-[var(--brand-300)]">
+        <div className="metric-box">
+          <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">
+            Economia
+          </p>
+          <p className="mt-1 text-sm font-semibold text-[var(--brand-300)]">
             {money.format(offer.estimatedSavingsVsBrazilBRL)}
           </p>
         </div>
       </div>
 
-      <p className="mt-5 text-sm leading-7 text-[var(--ink-muted)]">
-        {offer.whyItWins}
-      </p>
-      <p className="mt-3 text-sm text-[var(--brand-200)]">
-        Estoque e canal: {offer.stockSignal}
-      </p>
+      {offer.whyItWins && (
+        <p className="mt-2.5 line-clamp-2 text-xs leading-5 text-[var(--ink-muted)]">
+          {offer.whyItWins}
+        </p>
+      )}
 
-      {offer.caveats.length > 0 ? (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {offer.caveats.map((item) => (
-            <span key={item} className="meta-pill">
-              {item}
-            </span>
-          ))}
-        </div>
-      ) : null}
-
-      <div className="mt-5 flex flex-wrap gap-3">
-        <button
-          type="button"
-          onClick={onSelect}
-          className={`action-pill ${selected ? "action-pill-primary" : ""}`}
-        >
-          {selected ? "Destino ativo" : "Usar este destino"}
-        </button>
-      </div>
-
-      <SourcePills sources={offer.sources} />
+      {offer.caveats.length > 0 && (
+        <p className="mt-1.5 text-xs text-[var(--ink-subtle)]">
+          {offer.caveats.join(" · ")}
+        </p>
+      )}
     </article>
   );
 }
@@ -456,54 +442,62 @@ function TicketCard({
   option: TicketResearchOption;
   selected: boolean;
 }) {
+  const confidenceTone =
+    option.confidence === "high"
+      ? "completed"
+      : option.confidence === "medium"
+        ? "running"
+        : "pending";
+
   return (
-    <article
-      className={`panel-soft rounded-[1.7rem] p-5 ${
-        selected ? "product-card-selected" : ""
-      }`}
-    >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+    <article className={`offer-card ${selected ? "offer-card-selected" : ""}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
           <p className="kicker text-[var(--brand-300)]">
-            {selected ? "Janela principal" : "Alternativa"}
+            {selected ? "Melhor janela" : "Alternativa"}
           </p>
-          <h3 className="mt-3 text-xl font-semibold text-[var(--ink-0)]">
+          <p className="mt-1.5 line-clamp-2 text-sm font-semibold text-[var(--ink-0)]">
             {option.title}
-          </h3>
+          </p>
         </div>
-        <div className="text-right">
-          <span className="code-chip">{option.confidence}</span>
-          <p className="mt-3 font-display text-4xl text-[var(--ink-0)]">
+        <div className="shrink-0 text-right">
+          <span className={`status-pill ${stepTone(confidenceTone)}`}>
+            {option.confidence}
+          </span>
+          <p className="mt-2 font-display text-2xl leading-none text-[var(--ink-0)]">
             {option.displayPrice}
           </p>
         </div>
       </div>
 
-      <p className="mt-4 text-sm text-[var(--ink-muted)]">{formatWindow(option)}</p>
-      <p className="mt-4 text-sm leading-7 text-[var(--ink-muted)]">
-        {option.whyItWins}
+      <p className="mt-2 text-xs text-[var(--ink-muted)]">
+        {formatWindow(option)}
       </p>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        {option.typicalCarriers.map((carrier) => (
-          <span key={carrier} className="meta-pill">
-            {carrier}
+      {option.whyItWins && (
+        <p className="mt-2 line-clamp-2 text-xs leading-5 text-[var(--ink-muted)]">
+          {option.whyItWins}
+        </p>
+      )}
+
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {option.typicalCarriers.map((c) => (
+          <span key={c} className="meta-pill">
+            {c}
           </span>
         ))}
-        {option.bookingChannels.map((channel) => (
-          <span key={channel} className="meta-pill meta-pill-brand">
-            {channel}
+        {option.bookingChannels.map((c) => (
+          <span key={c} className="meta-pill meta-pill-brand">
+            {c}
           </span>
         ))}
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        {option.tradeoffs.map((tradeoff) => (
-          <span key={tradeoff} className="meta-pill">
-            {tradeoff}
-          </span>
-        ))}
-      </div>
+      {option.tradeoffs.length > 0 && (
+        <p className="mt-2 text-xs text-[var(--ink-subtle)]">
+          {option.tradeoffs.join(" · ")}
+        </p>
+      )}
 
       <SourcePills sources={option.sources} />
     </article>
@@ -517,52 +511,62 @@ function LodgingCard({
   option: TripPlanResponse["lodgingOptions"][number];
   selected: boolean;
 }) {
+  const confidenceTone =
+    option.confidence === "high"
+      ? "completed"
+      : option.confidence === "medium"
+        ? "running"
+        : "pending";
+
   return (
-    <article
-      className={`panel-soft rounded-[1.7rem] p-5 ${
-        selected ? "product-card-selected" : ""
-      }`}
-    >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+    <article className={`offer-card ${selected ? "offer-card-selected" : ""}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
           <p className="kicker text-[var(--brand-300)]">
-            {selected ? "Base principal" : "Base alternativa"}
+            {selected ? "Base principal" : "Alternativa"}
           </p>
-          <h3 className="mt-3 text-xl font-semibold text-[var(--ink-0)]">
+          <p className="mt-1.5 text-sm font-semibold text-[var(--ink-0)]">
             {option.area}
-          </h3>
-          <p className="mt-2 text-sm text-[var(--ink-muted)]">
+          </p>
+          <p className="text-xs text-[var(--ink-muted)]">
             {option.propertyStyle}
           </p>
         </div>
-        <div className="text-right">
-          <span className="code-chip">{option.confidence}</span>
-          <p className="mt-3 font-display text-4xl text-[var(--ink-0)]">
+        <div className="shrink-0 text-right">
+          <span className={`status-pill ${stepTone(confidenceTone)}`}>
+            {option.confidence}
+          </span>
+          <p className="mt-2 font-display text-2xl leading-none text-[var(--ink-0)]">
             {option.totalStayDisplay}
+          </p>
+          <p className="mt-0.5 text-xs text-[var(--ink-muted)]">
+            {option.nightlyDisplay}/noite
           </p>
         </div>
       </div>
 
-      <p className="mt-4 text-sm leading-7 text-[var(--ink-muted)]">
-        {option.whyItWins}
-      </p>
-      <p className="mt-3 text-sm text-[var(--brand-200)]">
-        Acesso: {option.accessNotes}
-      </p>
+      {option.whyItWins && (
+        <p className="mt-2.5 line-clamp-2 text-xs leading-5 text-[var(--ink-muted)]">
+          {option.whyItWins}
+        </p>
+      )}
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        <span className="meta-pill">{option.nightlyDisplay} / noite</span>
-        {option.bookingChannels.map((channel) => (
-          <span key={channel} className="meta-pill meta-pill-brand">
-            {channel}
-          </span>
-        ))}
-      </div>
+      {option.bookingChannels.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {option.bookingChannels.map((c) => (
+            <span key={c} className="meta-pill meta-pill-brand">
+              {c}
+            </span>
+          ))}
+        </div>
+      )}
 
       <SourcePills sources={option.sources} />
     </article>
   );
 }
+
+// ── Main component ─────────────────────────────────────────────────────────
 
 export function DealWorkflow() {
   const [query, setQuery] = useState("");
@@ -861,287 +865,243 @@ export function DealWorkflow() {
   const brazilBestPrice = search.results?.offers[0]?.price ?? null;
   const tripResult = trip.result;
 
+  const step2Status =
+    overseas.status === "ready"
+      ? "done"
+      : hasSearchResults
+        ? "active"
+        : "idle";
+
+  const step3Status =
+    trip.status === "ready"
+      ? "done"
+      : overseas.status === "ready"
+        ? "active"
+        : "idle";
+
   return (
-    <main className="relative min-h-screen overflow-hidden">
+    <main className="relative min-h-screen overflow-x-hidden">
       <div className="page-glow page-glow-top" />
       <div className="page-glow page-glow-side" />
       <div className="page-grid" />
 
-      <div className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-        <section className="hero-shell rounded-[2.4rem] px-5 py-6 sm:px-8 sm:py-8">
-          <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-            <div>
-              <p className="kicker text-[var(--brand-300)]">
-                Price Trip • produto no Brasil, decisao no mundo real
-              </p>
-              <h1 className="mt-5 max-w-4xl font-display text-5xl leading-[0.92] text-[var(--ink-0)] sm:text-6xl lg:text-7xl">
-                Pare de procurar passagem antes de saber se o produto realmente compensa.
-              </h1>
-              <p className="mt-6 max-w-3xl text-base leading-8 text-[var(--ink-muted)] sm:text-lg">
-                O fluxo certo e assim: voce digita o produto, escolhe a oferta
-                brasileira que representa seu baseline, pesquisa o mesmo item
-                nos Estados Unidos e na Europa, e so depois roda o workflow de
-                voo + hospedagem para ver se a viagem fecha a conta.
-              </p>
+      <div className="relative mx-auto w-full max-w-[860px] px-4 py-10 sm:px-6">
 
-              <div className="mt-8 flex flex-wrap gap-3">
-                {SAMPLE_QUERIES.map((sample) => (
-                  <button
-                    key={sample}
-                    type="button"
-                    onClick={() => setQuery(sample)}
-                    className="action-pill"
-                  >
-                    {sample}
-                  </button>
-                ))}
-              </div>
+        {/* ── Header ── */}
+        <header className="mb-10 text-center">
+          <p className="kicker text-[var(--brand-400)]">Price Trip</p>
+          <h1 className="mt-2 font-display text-4xl text-[var(--ink-0)] sm:text-5xl">
+            Vale a viagem?
+          </h1>
+          <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[var(--ink-muted)]">
+            Compare o produto no Brasil, pesquise no exterior, e calcule se a viagem fecha a conta.
+          </p>
+        </header>
+
+        {/* ── Step progress nav ── */}
+        <nav className="mb-8 flex items-center gap-2">
+          <StepBadge n={1} status={hasSearchResults ? "done" : "active"} />
+          <span
+            className={`text-sm font-medium ${hasSearchResults ? "text-[var(--ink-0)]" : "text-[var(--ink-muted)]"}`}
+          >
+            Brasil
+          </span>
+          <div
+            className={`h-px flex-1 transition-colors ${hasSearchResults ? "bg-[var(--brand-500)]" : "bg-[var(--line)]"}`}
+          />
+          <StepBadge n={2} status={step2Status} />
+          <span
+            className={`text-sm font-medium ${hasSearchResults ? "text-[var(--ink-0)]" : "text-[var(--ink-subtle)]"}`}
+          >
+            Exterior
+          </span>
+          <div
+            className={`h-px flex-1 transition-colors ${overseas.status === "ready" ? "bg-[var(--brand-500)]" : "bg-[var(--line)]"}`}
+          />
+          <StepBadge n={3} status={step3Status} />
+          <span
+            className={`text-sm font-medium ${overseas.status === "ready" ? "text-[var(--ink-0)]" : "text-[var(--ink-subtle)]"}`}
+          >
+            Viagem
+          </span>
+        </nav>
+
+        <div className="space-y-5">
+
+          {/* ── STEP 1: Brazil search ── */}
+          <section className="step-panel">
+            <div className="mb-5 flex items-center gap-3">
+              <StepBadge n={1} status={hasSearchResults ? "done" : "active"} />
+              <h2 className="font-display text-2xl text-[var(--ink-0)]">
+                Busca no Brasil
+              </h2>
+              {search.status === "loading" && (
+                <span className="ml-auto status-pill tone-active">
+                  Buscando...
+                </span>
+              )}
             </div>
 
-            <article className="panel-soft rounded-[1.9rem] p-5 sm:p-6">
-              <p className="kicker text-[var(--brand-300)]">Workflow alvo</p>
-              <div className="mt-4 space-y-4 text-sm leading-7 text-[var(--ink-muted)]">
-                <p>
-                  1. Buscar produto no Brasil enquanto o usuario digita.
-                </p>
-                <p>
-                  2. Deixar o usuario escolher a oferta-base correta, em vez de
-                  assumir um match.
-                </p>
-                <p>
-                  3. Pesquisar precos reais fora do Brasil com etapas visiveis.
-                </p>
-                <p>
-                  4. Rodar a viagem pesada so quando existir um destino
-                  comercial plausivel.
-                </p>
-              </div>
-            </article>
-          </div>
-        </section>
+            {/* Search input */}
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Digite o produto, ex: iphone 15"
+              className="search-input"
+            />
 
-        <section className="mt-8 grid gap-6 xl:grid-cols-[0.72fr_1.28fr]">
-          <aside className="space-y-5">
-            <article className="hero-shell rounded-[1.9rem] p-5 sm:p-6">
-              <p className="kicker text-[var(--brand-300)]">Etapa 1 • Brasil</p>
-              <h2 className="mt-3 font-display text-4xl text-[var(--ink-0)]">
-                Digite o produto. A busca acontece sem submit.
-              </h2>
-              <p className="mt-4 text-sm leading-7 text-[var(--ink-muted)]">
-                O baseline da decisao ainda e o mercado brasileiro, mas agora a
-                busca responde enquanto voce escreve e deixa claro quais
-                coletores realmente trouxeram resultado.
-              </p>
+            {/* Sample query chips */}
+            <div className="mt-3 flex flex-wrap gap-2">
+              {SAMPLE_QUERIES.map((sample) => (
+                <button
+                  key={sample}
+                  type="button"
+                  onClick={() => setQuery(sample)}
+                  className="action-pill"
+                >
+                  {sample}
+                </button>
+              ))}
+            </div>
 
-              <label className="mt-6 block">
-                <span className="sr-only">Buscar produto</span>
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Digite um produto, ex: iphone 15"
-                  className="search-input"
-                />
-              </label>
+            {/* Status line */}
+            <div className="mt-3 min-h-5 text-sm text-[var(--ink-muted)]">
+              {search.status === "error"
+                ? search.error
+                : hasSearchResults
+                  ? `${search.results?.offers.length} ofertas encontradas`
+                  : query.trim().length >= 3 && search.status !== "loading"
+                    ? "Nenhuma oferta encontrada."
+                    : query.trim().length > 0 && query.trim().length < 3
+                      ? "Continue digitando…"
+                      : ""}
+            </div>
 
-              <div className="mt-4 flex min-h-8 items-center text-sm text-[var(--ink-muted)]">
-                {search.status === "loading"
-                  ? "Pesquisando nos coletores brasileiros..."
-                  : search.status === "error"
-                    ? search.error
-                    : hasSearchResults
-                      ? `${search.results?.offers.length} ofertas normalizadas agora.`
-                      : query.trim().length >= 3
-                        ? "Nenhuma oferta forte ainda."
-                        : "Comece com pelo menos 3 caracteres."}
-              </div>
-            </article>
-
-            <article className="panel-soft rounded-[1.9rem] p-5 sm:p-6">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="kicker text-[var(--brand-300)]">Saude dos coletores</p>
-                  <h3 className="mt-2 text-2xl font-semibold text-[var(--ink-0)]">
-                    Quem esta de pe agora
-                  </h3>
-                </div>
-                <span className="code-chip">
-                  {search.results?.providers.length ?? 5} fontes
-                </span>
-              </div>
-
-              <div className="mt-5 grid gap-3">
-                {(search.results?.providers ?? []).map((provider) => (
-                  <div
-                    key={provider.storeKey}
-                    className="rounded-[1.2rem] border border-white/8 bg-black/20 p-4"
+            {/* Provider health pills — compact */}
+            {search.results && (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {search.results.providers.map((p) => (
+                  <span
+                    key={p.storeKey}
+                    className={`status-pill ${providerTone(p.status)}`}
                   >
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-[var(--ink-0)]">
-                        {provider.storeName}
-                      </p>
-                      <span className={`status-pill ${providerTone(provider.status)}`}>
-                        {statusLabel(provider.status)}
-                      </span>
-                    </div>
-                    <p className="mt-2 text-sm text-[var(--ink-muted)]">
-                      {provider.note ?? `${provider.offers.length} resultados validos.`}
+                    {p.storeName} · {statusLabel(p.status)}
+                    {p.status === "ok" ? ` (${p.offers.length})` : ""}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Offer grid */}
+            {hasSearchResults && (
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                {search.results?.offers.map((offer) => (
+                  <SearchOfferCard
+                    key={offerKey(offer)}
+                    offer={offer}
+                    selected={offerKey(offer) === selectedBrazilOfferId}
+                    onSelect={() => setSelectedBrazilOfferId(offerKey(offer))}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* CTA to step 2 */}
+            {hasSearchResults && selectedBrazilOffer && (
+              <div className="step-cta">
+                <div>
+                  <p className="text-xs text-[var(--ink-subtle)]">
+                    Oferta base
+                  </p>
+                  <p className="mt-0.5 text-sm text-[var(--ink-0)]">
+                    <span className="font-medium">{selectedBrazilOffer.storeName}</span>
+                    {" · "}
+                    <span className="font-display text-lg">
+                      {brazilBestPrice !== null ? money.format(brazilBestPrice) : "—"}
+                    </span>
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={startOverseasWorkflow}
+                  disabled={overseas.status === "running"}
+                  className={`action-pill action-pill-primary ${overseas.status === "running" ? "opacity-60" : ""}`}
+                >
+                  {overseas.status === "running"
+                    ? "Pesquisando…"
+                    : "Pesquisar fora do Brasil →"}
+                </button>
+              </div>
+            )}
+          </section>
+
+          {/* ── STEP 2: Overseas research ── */}
+          <section
+            className={`step-panel ${!hasSearchResults ? "step-panel-locked" : ""}`}
+          >
+            <div className="mb-5 flex items-center gap-3">
+              <StepBadge n={2} status={step2Status} />
+              <h2 className="font-display text-2xl text-[var(--ink-0)]">
+                Pesquisa Internacional
+              </h2>
+              {overseas.status === "running" && (
+                <span className="ml-auto status-pill tone-active">
+                  Pesquisando…
+                </span>
+              )}
+            </div>
+
+            {/* Idle nudge */}
+            {overseas.status === "idle" && hasSearchResults && (
+              <p className="text-sm text-[var(--ink-muted)]">
+                Selecione uma oferta e clique em{" "}
+                <strong className="text-[var(--ink-0)]">
+                  Pesquisar fora do Brasil
+                </strong>{" "}
+                acima.
+              </p>
+            )}
+
+            {/* Workflow steps inline */}
+            {overseas.steps.length > 0 && (
+              <InlineWorkflowSteps steps={overseas.steps} />
+            )}
+
+            {/* Error */}
+            {overseas.error && (
+              <p className="mt-3 rounded-lg border border-[var(--bad)]/30 bg-[var(--bad-soft)] p-3 text-sm text-[var(--ink-0)]">
+                {overseas.error}
+              </p>
+            )}
+
+            {/* Results */}
+            {overseas.result && (
+              <>
+                <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                  <p className="max-w-lg text-sm leading-6 text-[var(--ink-muted)]">
+                    {overseas.result.summary}
+                  </p>
+                  <div className="rounded-lg border border-white/8 bg-black/20 px-3 py-2 text-right">
+                    <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">
+                      Referência BR
+                    </p>
+                    <p className="mt-0.5 font-display text-xl text-[var(--ink-0)]">
+                      {money.format(overseas.result.brazilReferencePriceBRL)}
                     </p>
                   </div>
-                ))}
-                {!search.results ? (
-                  <div className="rounded-[1.2rem] border border-dashed border-white/12 p-4 text-sm text-[var(--ink-muted)]">
-                    A busca do produto precisa acontecer primeiro para expor quais
-                    coletores estao vivos. Hoje, KaBuM e Americanas retornam
-                    dados; Mercado Livre e Amazon BR estao sofrendo bloqueios de
-                    origem.
-                  </div>
-                ) : null}
-              </div>
-            </article>
-
-            <article className="panel-soft rounded-[1.9rem] p-5 sm:p-6">
-              <p className="kicker text-[var(--brand-300)]">Resumo rapido</p>
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <div>
-                  <p className="kicker text-[var(--ink-subtle)]">Melhor BR</p>
-                  <p className="mt-2 font-display text-4xl text-[var(--ink-0)]">
-                    {brazilBestPrice ? money.format(brazilBestPrice) : "--"}
-                  </p>
                 </div>
-                <div>
-                  <p className="kicker text-[var(--ink-subtle)]">Produto base</p>
-                  <p className="mt-2 text-sm leading-6 text-[var(--ink-muted)]">
-                    {selectedBrazilOffer?.title ?? "Selecione uma oferta para continuar."}
-                  </p>
-                </div>
-              </div>
-            </article>
-          </aside>
 
-          <div className="space-y-5">
-            {hasSearchResults ? (
-              <>
-                <article className="panel-soft rounded-[1.9rem] p-5 sm:p-6">
-                  <div className="flex flex-wrap items-end justify-between gap-4">
-                    <div>
-                      <p className="kicker text-[var(--brand-300)]">Ofertas brasileiras</p>
-                      <h2 className="mt-3 font-display text-4xl text-[var(--ink-0)]">
-                        Escolha o item que realmente representa sua comparacao.
-                      </h2>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={startOverseasWorkflow}
-                      disabled={!selectedBrazilOffer || overseas.status === "running"}
-                      className={`action-pill action-pill-primary ${
-                        !selectedBrazilOffer || overseas.status === "running"
-                          ? "opacity-60"
-                          : ""
-                      }`}
-                    >
-                      {overseas.status === "running"
-                        ? "Pesquisando exterior..."
-                        : "Pesquisar fora do Brasil"}
-                    </button>
+                {overseas.result.warnings.length > 0 && (
+                  <div className="mb-4 flex flex-wrap gap-1.5">
+                    {overseas.result.warnings.map((w) => (
+                      <span key={w} className="meta-pill">
+                        {w}
+                      </span>
+                    ))}
                   </div>
-                </article>
+                )}
 
-                <div className="grid gap-5 lg:grid-cols-2">
-                  {search.results?.offers.map((offer) => (
-                    <SearchOfferCard
-                      key={offerKey(offer)}
-                      offer={offer}
-                      selected={offerKey(offer) === selectedBrazilOfferId}
-                      onSelect={() => setSelectedBrazilOfferId(offerKey(offer))}
-                    />
-                  ))}
-                </div>
-              </>
-            ) : (
-              <article className="hero-shell rounded-[1.9rem] border border-dashed border-white/12 p-8">
-                <p className="kicker text-[var(--brand-300)]">Esperando produto</p>
-                <h2 className="mt-3 font-display text-4xl text-[var(--ink-0)]">
-                  O app agora comeca no item, nao na passagem.
-                </h2>
-                <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--ink-muted)]">
-                  Digite o nome do produto. Assim que a busca brasileira tiver
-                  resultado, a interface libera a pesquisa internacional e depois
-                  o workflow de viagem.
-                </p>
-              </article>
-            )}
-          </div>
-        </section>
-
-        <section className="mt-8 grid gap-6 xl:grid-cols-[0.66fr_1.34fr]">
-          <aside className="space-y-5">
-            <article className="hero-shell rounded-[1.9rem] p-5 sm:p-6">
-              <p className="kicker text-[var(--brand-300)]">Etapa 2 • Exterior</p>
-              <h2 className="mt-3 font-display text-4xl text-[var(--ink-0)]">
-                Pesquisa internacional orientada pelo produto selecionado.
-              </h2>
-              <p className="mt-4 text-sm leading-7 text-[var(--ink-muted)]">
-                Aqui entram os agentes de mercado. O objetivo nao e achar
-                {" "}qualquer preco{" "}, mas sim oportunidades em cidades que facam sentido para
-                uma viagem curta de compra.
-              </p>
-            </article>
-
-            {overseas.steps.length > 0 ? (
-              <WorkflowRail
-                title="Workflow ao vivo"
-                description="A UI precisa mostrar progresso real enquanto a pesquisa acontece."
-                steps={overseas.steps}
-              />
-            ) : (
-              <article className="panel-soft rounded-[1.8rem] p-5">
-                <p className="kicker text-[var(--brand-300)]">Pronto para rodar</p>
-                <p className="mt-3 text-sm leading-7 text-[var(--ink-muted)]">
-                  Selecione uma oferta brasileira e dispare a pesquisa
-                  internacional. Este bloco passa a mostrar os agentes e suas
-                  mensagens enquanto o backend esta trabalhando.
-                </p>
-              </article>
-            )}
-
-            {overseas.error ? (
-              <article className="rounded-[1.6rem] border border-[var(--bad)]/35 bg-[var(--bad-soft)] p-4 text-sm leading-6 text-[var(--ink-0)]">
-                {overseas.error}
-              </article>
-            ) : null}
-          </aside>
-
-          <div className="space-y-5">
-            {overseas.result ? (
-              <>
-                <article className="panel-soft rounded-[1.9rem] p-5 sm:p-6">
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                      <p className="kicker text-[var(--brand-300)]">Leitura internacional</p>
-                      <h2 className="mt-3 font-display text-4xl text-[var(--ink-0)]">
-                        {overseas.result.summary}
-                      </h2>
-                    </div>
-                    <div className="rounded-[1.4rem] border border-white/8 bg-black/20 px-4 py-4">
-                      <p className="kicker text-[var(--ink-subtle)]">Referencia BR</p>
-                      <p className="mt-2 font-display text-4xl text-[var(--ink-0)]">
-                        {money.format(overseas.result.brazilReferencePriceBRL)}
-                      </p>
-                    </div>
-                  </div>
-
-                  {overseas.result.warnings.length > 0 ? (
-                    <div className="mt-5 flex flex-wrap gap-2">
-                      {overseas.result.warnings.map((warning) => (
-                        <span key={warning} className="meta-pill">
-                          {warning}
-                        </span>
-                      ))}
-                    </div>
-                  ) : null}
-                </article>
-
-                <div className="grid gap-5 lg:grid-cols-2">
+                <div className="grid gap-3 sm:grid-cols-2">
                   {overseas.result.offers.map((offer) => (
                     <OverseasOfferCard
                       key={offer.id}
@@ -1151,204 +1111,222 @@ export function DealWorkflow() {
                     />
                   ))}
                 </div>
-              </>
-            ) : (
-              <article className="panel-soft rounded-[1.9rem] border border-dashed border-white/12 p-8">
-                <p className="kicker text-[var(--brand-300)]">Esperando pesquisa</p>
-                <h2 className="mt-3 font-display text-4xl text-[var(--ink-0)]">
-                  O destino comercial nasce aqui.
-                </h2>
-                <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--ink-muted)]">
-                  Assim que a pesquisa internacional terminar, voce escolhe qual
-                  mercado faz sentido perseguir. So depois disso o sistema abre a
-                  busca pesada de passagem e hospedagem.
-                </p>
-              </article>
-            )}
-          </div>
-        </section>
 
-        <section className="mt-8 grid gap-6 xl:grid-cols-[0.68fr_1.32fr]">
-          <aside className="space-y-5">
-            <article className="hero-shell rounded-[1.9rem] p-5 sm:p-6">
-              <p className="kicker text-[var(--brand-300)]">Etapa 3 • Viagem</p>
-              <h2 className="mt-3 font-display text-4xl text-[var(--ink-0)]">
-                Voos primeiro. Hospedagem depois. Conta final no fim.
-              </h2>
-              <p className="mt-4 text-sm leading-7 text-[var(--ink-muted)]">
-                Esta etapa so deve existir depois da escolha do destino
-                comercial. O workflow usa a oferta internacional escolhida para
-                buscar janelas de voo e depois bases de hospedagem compativeis.
-              </p>
-
-              <div className="mt-6 space-y-4">
-                <label className="block space-y-2">
-                  <span className="kicker text-[var(--ink-subtle)]">Origem</span>
-                  <input
-                    value={tripBrief.origin}
-                    onChange={(event) =>
-                      setTripBrief((current) => ({
-                        ...current,
-                        origin: event.target.value,
-                      }))
-                    }
-                    className="field-input"
-                  />
-                </label>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="block space-y-2">
-                    <span className="kicker text-[var(--ink-subtle)]">Viajantes</span>
-                    <input
-                      value={tripBrief.travelers}
-                      onChange={(event) =>
-                        setTripBrief((current) => ({
-                          ...current,
-                          travelers: event.target.value,
-                        }))
-                      }
-                      className="field-input"
-                    />
-                  </label>
-
-                  <label className="block space-y-2">
-                    <span className="kicker text-[var(--ink-subtle)]">Noites</span>
-                    <input
-                      type="number"
-                      min={2}
-                      max={7}
-                      value={tripBrief.tripLengthNights}
-                      onChange={(event) =>
-                        setTripBrief((current) => ({
-                          ...current,
-                          tripLengthNights: event.target.value,
-                        }))
-                      }
-                      className="field-input"
-                    />
-                  </label>
-                </div>
-
-                <label className="block space-y-2">
-                  <span className="kicker text-[var(--ink-subtle)]">Hospedagem</span>
-                  <textarea
-                    value={tripBrief.stayPreference}
-                    onChange={(event) =>
-                      setTripBrief((current) => ({
-                        ...current,
-                        stayPreference: event.target.value,
-                      }))
-                    }
-                    className="field-input min-h-[110px] resize-y py-3"
-                  />
-                </label>
-
-                <label className="block space-y-2">
-                  <span className="kicker text-[var(--ink-subtle)]">Prioridades</span>
-                  <textarea
-                    value={tripBrief.priorities}
-                    onChange={(event) =>
-                      setTripBrief((current) => ({
-                        ...current,
-                        priorities: event.target.value,
-                      }))
-                    }
-                    className="field-input min-h-[110px] resize-y py-3"
-                  />
-                </label>
-
-                <button
-                  type="button"
-                  onClick={startTripWorkflow}
-                  disabled={!selectedBrazilOffer || !selectedOverseasOffer || trip.status === "running"}
-                  className={`action-pill action-pill-primary w-full justify-center ${
-                    !selectedBrazilOffer || !selectedOverseasOffer || trip.status === "running"
-                      ? "opacity-60"
-                      : ""
-                  }`}
-                >
-                  {trip.status === "running"
-                    ? "Calculando viagem..."
-                    : "Buscar melhor viagem"}
-                </button>
-              </div>
-            </article>
-
-            {selectedOverseasOffer ? (
-              <article className="panel-soft rounded-[1.8rem] p-5">
-                <p className="kicker text-[var(--brand-300)]">Destino ativo</p>
-                <h3 className="mt-3 text-2xl font-semibold text-[var(--ink-0)]">
-                  {selectedOverseasOffer.city}, {selectedOverseasOffer.country}
-                </h3>
-                <p className="mt-3 text-sm leading-7 text-[var(--ink-muted)]">
-                  Produto em {selectedOverseasOffer.storeName} por{" "}
-                  {money.format(selectedOverseasOffer.estimatedPriceBRL)}.
-                </p>
-              </article>
-            ) : null}
-
-            {trip.steps.length > 0 ? (
-              <WorkflowRail
-                title="Workflow ao vivo"
-                description="Passagens, hospedagem e custo total atualizados por etapa."
-                steps={trip.steps}
-              />
-            ) : null}
-
-            {trip.error ? (
-              <article className="rounded-[1.6rem] border border-[var(--bad)]/35 bg-[var(--bad-soft)] p-4 text-sm leading-6 text-[var(--ink-0)]">
-                {trip.error}
-              </article>
-            ) : null}
-          </aside>
-
-          <div className="space-y-5">
-            {tripResult ? (
-              <>
-                <article className="panel-soft rounded-[1.9rem] p-5 sm:p-6">
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="max-w-3xl">
-                      <p className="kicker text-[var(--brand-300)]">Conta final</p>
-                      <h2 className="mt-3 font-display text-4xl text-[var(--ink-0)]">
-                        {tripResult.summary}
-                      </h2>
-                      <p className="mt-4 text-sm leading-7 text-[var(--ink-muted)]">
-                        {tripResult.recommendation}
+                {selectedOverseasOffer && (
+                  <div className="step-cta">
+                    <div>
+                      <p className="text-xs text-[var(--ink-subtle)]">
+                        Destino selecionado
+                      </p>
+                      <p className="mt-0.5 text-sm font-medium text-[var(--ink-0)]">
+                        {selectedOverseasOffer.city},{" "}
+                        {selectedOverseasOffer.country}
+                        {" · "}
+                        <span className="font-display text-lg">
+                          {money.format(selectedOverseasOffer.estimatedPriceBRL)}
+                        </span>
                       </p>
                     </div>
-                    <div className="rounded-[1.4rem] border border-white/8 bg-black/20 px-4 py-4">
-                      <p className="kicker text-[var(--ink-subtle)]">Viagem + produto</p>
-                      <p className="mt-2 font-display text-4xl text-[var(--ink-0)]">
-                        {money.format(tripResult.estimatedTripSpendBRL)}
-                      </p>
-                    </div>
+                    <p className="text-xs text-[var(--brand-300)]">
+                      ↓ Configure a viagem abaixo
+                    </p>
                   </div>
+                )}
+              </>
+            )}
+          </section>
 
-                  <div className="mt-6 grid gap-4 lg:grid-cols-4">
-                    <div className="rounded-[1.25rem] border border-white/8 bg-black/20 p-4">
-                      <p className="kicker text-[var(--ink-subtle)]">Brasil</p>
-                      <p className="mt-2 text-2xl font-semibold text-[var(--ink-0)]">
-                        {selectedBrazilOffer ? money.format(selectedBrazilOffer.price) : "--"}
+          {/* ── STEP 3: Trip planning ── */}
+          <section
+            className={`step-panel ${!overseas.result ? "step-panel-locked" : ""}`}
+          >
+            <div className="mb-5 flex items-center gap-3">
+              <StepBadge n={3} status={step3Status} />
+              <h2 className="font-display text-2xl text-[var(--ink-0)]">
+                Planejar a Viagem
+              </h2>
+              {trip.status === "running" && (
+                <span className="ml-auto status-pill tone-active">
+                  Calculando…
+                </span>
+              )}
+            </div>
+
+            {/* Active destination banner */}
+            {selectedOverseasOffer && (
+              <div className="mb-5 rounded-lg border border-[var(--brand-600)]/30 bg-[var(--active-soft)] px-4 py-3">
+                <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--brand-300)]">
+                  Destino ativo
+                </p>
+                <p className="mt-1 text-sm font-medium text-[var(--ink-0)]">
+                  {selectedOverseasOffer.city}, {selectedOverseasOffer.country}
+                  {" · "}
+                  {selectedOverseasOffer.storeName}
+                </p>
+                <p className="text-xs text-[var(--ink-muted)]">
+                  Produto por{" "}
+                  {money.format(selectedOverseasOffer.estimatedPriceBRL)} em BRL
+                </p>
+              </div>
+            )}
+
+            {/* Trip brief form */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block sm:col-span-2">
+                <span className="kicker text-[var(--ink-subtle)]">Origem</span>
+                <input
+                  value={tripBrief.origin}
+                  onChange={(e) =>
+                    setTripBrief((c) => ({ ...c, origin: e.target.value }))
+                  }
+                  className="field-input mt-1.5"
+                />
+              </label>
+
+              <label className="block">
+                <span className="kicker text-[var(--ink-subtle)]">
+                  Viajantes
+                </span>
+                <input
+                  value={tripBrief.travelers}
+                  onChange={(e) =>
+                    setTripBrief((c) => ({ ...c, travelers: e.target.value }))
+                  }
+                  className="field-input mt-1.5"
+                />
+              </label>
+
+              <label className="block">
+                <span className="kicker text-[var(--ink-subtle)]">Noites</span>
+                <input
+                  type="number"
+                  min={2}
+                  max={7}
+                  value={tripBrief.tripLengthNights}
+                  onChange={(e) =>
+                    setTripBrief((c) => ({
+                      ...c,
+                      tripLengthNights: e.target.value,
+                    }))
+                  }
+                  className="field-input mt-1.5"
+                />
+              </label>
+
+              <label className="block">
+                <span className="kicker text-[var(--ink-subtle)]">
+                  Hospedagem
+                </span>
+                <textarea
+                  value={tripBrief.stayPreference}
+                  onChange={(e) =>
+                    setTripBrief((c) => ({
+                      ...c,
+                      stayPreference: e.target.value,
+                    }))
+                  }
+                  className="field-input mt-1.5 min-h-[80px] resize-y py-2.5"
+                />
+              </label>
+
+              <label className="block">
+                <span className="kicker text-[var(--ink-subtle)]">
+                  Prioridades
+                </span>
+                <textarea
+                  value={tripBrief.priorities}
+                  onChange={(e) =>
+                    setTripBrief((c) => ({
+                      ...c,
+                      priorities: e.target.value,
+                    }))
+                  }
+                  className="field-input mt-1.5 min-h-[80px] resize-y py-2.5"
+                />
+              </label>
+            </div>
+
+            <button
+              type="button"
+              onClick={startTripWorkflow}
+              disabled={
+                !selectedBrazilOffer ||
+                !selectedOverseasOffer ||
+                trip.status === "running"
+              }
+              className={`action-pill action-pill-primary mt-5 w-full justify-center ${
+                !selectedBrazilOffer ||
+                !selectedOverseasOffer ||
+                trip.status === "running"
+                  ? "opacity-60"
+                  : ""
+              }`}
+            >
+              {trip.status === "running"
+                ? "Calculando…"
+                : "Calcular viagem completa →"}
+            </button>
+
+            {/* Workflow steps inline */}
+            {trip.steps.length > 0 && (
+              <InlineWorkflowSteps steps={trip.steps} />
+            )}
+
+            {/* Error */}
+            {trip.error && (
+              <p className="mt-3 rounded-lg border border-[var(--bad)]/30 bg-[var(--bad-soft)] p-3 text-sm text-[var(--ink-0)]">
+                {trip.error}
+              </p>
+            )}
+
+            {/* ── Trip results ── */}
+            {tripResult && (
+              <>
+                {/* Final comparison scorecard */}
+                <div className="result-panel mt-6">
+                  <p className="kicker text-[var(--brand-300)]">Conta final</p>
+                  <h3 className="mt-2 font-display text-3xl text-[var(--ink-0)]">
+                    {tripResult.summary}
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-[var(--ink-muted)]">
+                    {tripResult.recommendation}
+                  </p>
+
+                  <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                    <div className="metric-box">
+                      <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">
+                        Brasil
+                      </p>
+                      <p className="mt-1.5 text-xl font-semibold text-[var(--ink-0)]">
+                        {selectedBrazilOffer
+                          ? money.format(selectedBrazilOffer.price)
+                          : "—"}
                       </p>
                     </div>
-                    <div className="rounded-[1.25rem] border border-white/8 bg-black/20 p-4">
-                      <p className="kicker text-[var(--ink-subtle)]">Produto fora</p>
-                      <p className="mt-2 text-2xl font-semibold text-[var(--ink-0)]">
+                    <div className="metric-box">
+                      <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">
+                        Produto fora
+                      </p>
+                      <p className="mt-1.5 text-xl font-semibold text-[var(--ink-0)]">
                         {money.format(tripResult.productPriceBRL)}
                       </p>
                     </div>
-                    <div className="rounded-[1.25rem] border border-white/8 bg-black/20 p-4">
-                      <p className="kicker text-[var(--ink-subtle)]">Trip spend</p>
-                      <p className="mt-2 text-2xl font-semibold text-[var(--ink-0)]">
+                    <div className="metric-box">
+                      <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">
+                        Viagem total
+                      </p>
+                      <p className="mt-1.5 text-xl font-semibold text-[var(--ink-0)]">
                         {money.format(tripResult.estimatedTripSpendBRL)}
                       </p>
                     </div>
-                    <div className="rounded-[1.25rem] border border-white/8 bg-black/20 p-4">
-                      <p className="kicker text-[var(--ink-subtle)]">Ganho/perda</p>
+                    <div className="metric-box">
+                      <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">
+                        Ganho/perda
+                      </p>
                       <p
-                        className={`mt-2 text-2xl font-semibold ${
+                        className={`mt-1.5 text-xl font-semibold ${
                           tripResult.estimatedSavingsVsBrazilBRL >= 0
-                            ? "text-[var(--brand-300)]"
+                            ? "text-[var(--good)]"
                             : "text-[var(--bad)]"
                         }`}
                       >
@@ -1357,29 +1335,26 @@ export function DealWorkflow() {
                     </div>
                   </div>
 
-                  {tripResult.warnings.length > 0 ? (
-                    <div className="mt-5 flex flex-wrap gap-2">
-                      {tripResult.warnings.map((warning) => (
-                        <span key={warning} className="meta-pill">
-                          {warning}
+                  {tripResult.warnings.length > 0 && (
+                    <div className="mt-4 flex flex-wrap gap-1.5">
+                      {tripResult.warnings.map((w) => (
+                        <span key={w} className="meta-pill">
+                          {w}
                         </span>
                       ))}
                     </div>
-                  ) : null}
-                </article>
+                  )}
+                </div>
 
-                <article className="panel-soft rounded-[1.9rem] p-5 sm:p-6">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="kicker text-[var(--brand-300)]">Passagens</p>
-                      <h3 className="mt-2 font-display text-3xl text-[var(--ink-0)]">
-                        Janelas de voo pesquisadas
-                      </h3>
-                    </div>
-                    <span className="code-chip">{tripResult.ticketOptions.length} opcoes</span>
+                {/* Ticket options */}
+                <div className="mt-5">
+                  <div className="mb-3 flex items-center justify-between">
+                    <p className="kicker text-[var(--brand-300)]">Passagens</p>
+                    <span className="code-chip">
+                      {tripResult.ticketOptions.length} opções
+                    </span>
                   </div>
-
-                  <div className="mt-5 space-y-4">
+                  <div className="space-y-3">
                     {tripResult.ticketOptions.map((option) => (
                       <TicketCard
                         key={option.id}
@@ -1388,20 +1363,19 @@ export function DealWorkflow() {
                       />
                     ))}
                   </div>
-                </article>
+                </div>
 
-                <article className="panel-soft rounded-[1.9rem] p-5 sm:p-6">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="kicker text-[var(--brand-300)]">Hospedagem</p>
-                      <h3 className="mt-2 font-display text-3xl text-[var(--ink-0)]">
-                        Bases de estadia para a melhor janela
-                      </h3>
-                    </div>
-                    <span className="code-chip">{tripResult.lodgingOptions.length} opcoes</span>
+                {/* Lodging options */}
+                <div className="mt-5">
+                  <div className="mb-3 flex items-center justify-between">
+                    <p className="kicker text-[var(--brand-300)]">
+                      Hospedagem
+                    </p>
+                    <span className="code-chip">
+                      {tripResult.lodgingOptions.length} opções
+                    </span>
                   </div>
-
-                  <div className="mt-5 space-y-4">
+                  <div className="space-y-3">
                     {tripResult.lodgingOptions.map((option) => (
                       <LodgingCard
                         key={option.id}
@@ -1410,23 +1384,18 @@ export function DealWorkflow() {
                       />
                     ))}
                   </div>
-                </article>
+                </div>
               </>
-            ) : (
-              <article className="panel-soft rounded-[1.9rem] border border-dashed border-white/12 p-8">
-                <p className="kicker text-[var(--brand-300)]">Esperando destino</p>
-                <h2 className="mt-3 font-display text-4xl text-[var(--ink-0)]">
-                  O workflow pesado entra so depois da oferta internacional.
-                </h2>
-                <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--ink-muted)]">
-                  Esse bloco vai montar janelas de passagem, bases de hospedagem
-                  e o custo total da operacao. Se o numero final ficar pior do
-                  que o Brasil, a interface deixa isso explicito.
-                </p>
-              </article>
             )}
-          </div>
-        </section>
+          </section>
+        </div>
+
+        {/* Footer */}
+        <footer className="mt-12 pb-6 text-center">
+          <p className="text-xs text-[var(--ink-subtle)]">
+            Price Trip · hackathon
+          </p>
+        </footer>
       </div>
     </main>
   );
