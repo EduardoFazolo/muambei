@@ -6,6 +6,7 @@ import {
   researchTicketWindows,
   TripResearchError,
 } from "@/lib/deal-workflow";
+import { fetchExchangeRates } from "@/lib/exchange-rates";
 import type { WorkflowEvent } from "@/lib/deal-workflow/types";
 
 export const runtime = "nodejs";
@@ -182,13 +183,14 @@ export async function POST(request: NextRequest) {
         );
 
         const tripPayload = payload;
+        const tripRates = await fetchExchangeRates();
         const ticketPhase = await withHeartbeat(
           writer,
           encoder,
           "trip",
           "flight-scan",
           "Agente de passagens",
-          async () => researchTicketWindows(tripPayload),
+          async () => researchTicketWindows(tripPayload, tripRates),
         );
 
         const featuredTicket =
@@ -237,7 +239,7 @@ export async function POST(request: NextRequest) {
           "stay-scan",
           "Agente de hospedagem",
           async () =>
-            researchLodgingStrategies(ticketPhase.input, featuredTicket),
+            researchLodgingStrategies(ticketPhase.input, featuredTicket, tripRates),
         );
 
         const featuredLodging =

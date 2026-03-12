@@ -375,13 +375,22 @@ function overseasPrompt(
   ].join("\n");
 }
 
-function ticketPrompt(input: TripWorkflowInput) {
+function ticketPrompt(
+  input: TripWorkflowInput,
+  rates: { usdToBrl: number; eurToBrl: number; fetchedAt: string },
+) {
   return [
     `Today's date is ${new Date().toISOString().slice(0, 10)}.`,
     "Research current public airfare information with live web search.",
     "This is a COST-OPTIMIZATION shopping trip. The traveler's only goal is to buy a product cheaply and return home.",
     "CRITICAL: Set bestTicketId to the option with the LOWEST estimatedRoundTripBRL that has reasonable reliability.",
     "Do NOT pick a premium or convenient window as best — cheapest viable ticket wins.",
+    `IMPORTANT: estimatedRoundTripBRL must always be in BRL (Brazilian Reais).`,
+    `- If the price you find is already in BRL, set estimatedRoundTripBRL = that BRL value directly. Do NOT multiply it by any rate.`,
+    `- If the price is in USD, convert using the real-time rate below. If in EUR, use the EUR rate.`,
+    `Real-time exchange rates (fetched at ${rates.fetchedAt}):`,
+    `  USD → BRL: ${rates.usdToBrl.toFixed(4)}`,
+    `  EUR → BRL: ${rates.eurToBrl.toFixed(4)}`,
     "",
     "SEASONAL ANALYSIS — before suggesting windows, research and reason about:",
     "  1. Which months/seasons historically have the cheapest fares on this specific route (off-peak, shoulder season).",
@@ -410,6 +419,7 @@ function ticketPrompt(input: TripWorkflowInput) {
 function lodgingPrompt(
   input: TripWorkflowInput,
   featuredTicket: TicketResearchOption,
+  rates: { usdToBrl: number; eurToBrl: number; fetchedAt: string },
 ) {
   return [
     `Today's date is ${new Date().toISOString().slice(0, 10)}.`,
@@ -418,6 +428,12 @@ function lodgingPrompt(
     "CRITICAL: Set bestLodgingId to the option with the LOWEST estimatedTotalStayBRL that is still safe and has reasonable transport access.",
     "Do NOT pick a central or premium location as best just because it is convenient — cheapest safe option wins.",
     "Sort your thinking: rank options by total cost ascending; pick the cheapest as bestLodgingId.",
+    `IMPORTANT: estimatedTotalStayBRL must always be in BRL (Brazilian Reais).`,
+    `- If the price you find is already in BRL, set estimatedTotalStayBRL = that BRL value directly. Do NOT multiply it by any rate.`,
+    `- If the price is in USD, convert using the real-time rate below. If in EUR, use the EUR rate.`,
+    `Real-time exchange rates (fetched at ${rates.fetchedAt}):`,
+    `  USD → BRL: ${rates.usdToBrl.toFixed(4)}`,
+    `  EUR → BRL: ${rates.eurToBrl.toFixed(4)}`,
     "Use BRL estimates for the total stay. Every option must include at least one source URL.",
     "",
     `Destination city: ${input.selectedOffer.city}`,
@@ -454,14 +470,17 @@ export async function researchOverseasProduct(input: unknown) {
   } satisfies OverseasResearchResponse;
 }
 
-export async function researchTicketWindows(input: unknown) {
+export async function researchTicketWindows(
+  input: unknown,
+  rates: { usdToBrl: number; eurToBrl: number; fetchedAt: string },
+) {
   const normalized = normalizeTripInput(input);
   const tickets = await requestStructuredResearch<TicketResearchModel>({
     schemaName: "shopping_trip_ticket_research",
     schema: TICKET_RESEARCH_SCHEMA,
     instructions:
       "You are a rigorous travel analyst. Use live web search, favor current sources, and return only the requested JSON schema.",
-    input: ticketPrompt(normalized),
+    input: ticketPrompt(normalized, rates),
   });
 
   return {
@@ -473,20 +492,22 @@ export async function researchTicketWindows(input: unknown) {
 export async function researchLodgingStrategies(
   input: TripWorkflowInput,
   featuredTicket: TicketResearchOption,
+  rates: { usdToBrl: number; eurToBrl: number; fetchedAt: string },
 ) {
   return requestStructuredResearch<LodgingResearchModel>({
     schemaName: "shopping_trip_lodging_research",
     schema: LODGING_RESEARCH_SCHEMA,
     instructions:
       "You are a rigorous lodging analyst. Use live web search, favor current sources, and return only the requested JSON schema.",
-    input: lodgingPrompt(input, featuredTicket),
+    input: lodgingPrompt(input, featuredTicket, rates),
   });
 }
 
 export async function researchTripWorkflow(
   input: unknown,
 ): Promise<TripPlanResponse> {
-  const { input: normalized, tickets } = await researchTicketWindows(input);
+  const rates = await fetchExchangeRates();
+  const { input: normalized, tickets } = await researchTicketWindows(input, rates);
   const featuredTicket =
     tickets.ticketOptions.find((item) => item.id === tickets.bestTicketId) ??
     tickets.ticketOptions[0];
@@ -499,7 +520,7 @@ export async function researchTripWorkflow(
     );
   }
 
-  const lodging = await researchLodgingStrategies(normalized, featuredTicket);
+  const lodging = await researchLodgingStrategies(normalized, featuredTicket, rates);
 
   const featuredLodging =
     lodging.lodgingOptions.find((item) => item.id === lodging.bestLodgingId) ??

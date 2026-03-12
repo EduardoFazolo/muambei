@@ -261,12 +261,14 @@ function SearchOfferCard({ offer, selected, onSelect }: {
   );
 }
 
-function OverseasOfferCard({ offer, selected, onSelect }: {
-  offer: OverseasMarketOffer; selected: boolean; onSelect: () => void;
+function OverseasOfferCard({ offer, brazilReferencePriceBRL, selected, onSelect }: {
+  offer: OverseasMarketOffer; brazilReferencePriceBRL: number; selected: boolean; onSelect: () => void;
 }) {
   const confidenceTone =
     offer.confidence === "high" ? "completed" :
     offer.confidence === "medium" ? "running" : "pending";
+
+  const savings = brazilReferencePriceBRL - offer.estimatedPriceBRL;
 
   return (
     <article onClick={onSelect} className={`offer-card ${selected ? "offer-card-selected" : ""}`}>
@@ -287,17 +289,17 @@ function OverseasOfferCard({ offer, selected, onSelect }: {
 
       <div className="mt-3 grid grid-cols-3 gap-2">
         <div className="metric-box">
-          <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">Local</p>
-          <p className="mt-1 text-sm font-semibold text-[var(--ink-0)]">{offer.priceLocalDisplay}</p>
+          <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">Brasil</p>
+          <p className="mt-1 text-sm font-semibold text-[var(--ink-0)]">{money.format(brazilReferencePriceBRL)}</p>
         </div>
         <div className="metric-box">
-          <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">Em BRL</p>
+          <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">Exterior ({offer.priceLocalDisplay})</p>
           <p className="mt-1 text-sm font-semibold text-[var(--ink-0)]">{money.format(offer.estimatedPriceBRL)}</p>
         </div>
         <div className="metric-box">
           <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">Economia</p>
-          <p className="mt-1 text-sm font-semibold text-[var(--coral-500)]">
-            {money.format(offer.estimatedSavingsVsBrazilBRL)}
+          <p className={`mt-1 text-sm font-semibold ${savings > 0 ? "text-[var(--good)]" : "text-[var(--bad)]"}`}>
+            {money.format(savings)}
           </p>
         </div>
       </div>
@@ -313,35 +315,49 @@ function OverseasOfferCard({ offer, selected, onSelect }: {
 }
 
 function TicketCard({ option, selected }: { option: TicketResearchOption; selected: boolean }) {
+  const [expanded, setExpanded] = useState(false);
   const confidenceTone =
     option.confidence === "high" ? "completed" :
     option.confidence === "medium" ? "running" : "pending";
 
   return (
     <article className={`offer-card ${selected ? "offer-card-selected" : ""}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="kicker text-[var(--brand-600)]">{selected ? "Melhor janela" : "Alternativa"}</p>
-          <p className="mt-1.5 line-clamp-2 text-sm font-semibold text-[var(--ink-0)]">{option.title}</p>
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full text-left"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="kicker text-[var(--brand-600)]">{selected ? "Melhor janela" : "Alternativa"}</p>
+            <p className="mt-1 line-clamp-1 text-sm font-semibold text-[var(--ink-0)]">{option.title}</p>
+            <p className="mt-0.5 text-xs text-[var(--ink-muted)]">{formatWindow(option)}</p>
+          </div>
+          <div className="shrink-0 text-right">
+            <p className="font-display text-2xl leading-none text-[var(--ink-0)]">
+              {money.format(option.estimatedRoundTripBRL)}
+            </p>
+            <p className="mt-0.5 text-[10px] text-[var(--ink-subtle)]">{option.displayPrice} · ida e volta</p>
+          </div>
         </div>
-        <div className="shrink-0 text-right">
-          <span className={`status-pill ${stepTone(confidenceTone)}`}>{option.confidence}</span>
-          <p className="mt-2 font-display text-2xl leading-none text-[var(--ink-0)]">{option.displayPrice}</p>
-        </div>
-      </div>
+      </button>
 
-      <p className="mt-2 text-xs text-[var(--ink-muted)]">{formatWindow(option)}</p>
-      {option.whyItWins && (
-        <p className="mt-2 line-clamp-2 text-xs leading-5 text-[var(--ink-muted)]">{option.whyItWins}</p>
+      {expanded && (
+        <div className="mt-3 border-t border-[var(--line)] pt-3 space-y-2">
+          <span className={`status-pill ${stepTone(confidenceTone)}`}>{option.confidence}</span>
+          {option.whyItWins && (
+            <p className="text-xs leading-5 text-[var(--ink-muted)]">{option.whyItWins}</p>
+          )}
+          <div className="flex flex-wrap gap-1.5">
+            {option.typicalCarriers.map((c) => <span key={c} className="meta-pill">{c}</span>)}
+            {option.bookingChannels.map((c) => <span key={c} className="meta-pill meta-pill-brand">{c}</span>)}
+          </div>
+          {option.tradeoffs.length > 0 && (
+            <p className="text-xs text-[var(--ink-subtle)]">{option.tradeoffs.join(" · ")}</p>
+          )}
+          <SourcePills sources={option.sources} />
+        </div>
       )}
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {option.typicalCarriers.map((c) => <span key={c} className="meta-pill">{c}</span>)}
-        {option.bookingChannels.map((c) => <span key={c} className="meta-pill meta-pill-brand">{c}</span>)}
-      </div>
-      {option.tradeoffs.length > 0 && (
-        <p className="mt-2 text-xs text-[var(--ink-subtle)]">{option.tradeoffs.join(" · ")}</p>
-      )}
-      <SourcePills sources={option.sources} />
     </article>
   );
 }
@@ -349,34 +365,52 @@ function TicketCard({ option, selected }: { option: TicketResearchOption; select
 function LodgingCard({ option, selected }: {
   option: TripPlanResponse["lodgingOptions"][number]; selected: boolean;
 }) {
+  const [expanded, setExpanded] = useState(false);
   const confidenceTone =
     option.confidence === "high" ? "completed" :
     option.confidence === "medium" ? "running" : "pending";
 
+  const nightlyBRL = Math.round(option.estimatedTotalStayBRL / Math.max(1, Number.parseInt(option.nightlyDisplay) || 1));
+
   return (
     <article className={`offer-card ${selected ? "offer-card-selected" : ""}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="kicker text-[var(--brand-600)]">{selected ? "Base principal" : "Alternativa"}</p>
-          <p className="mt-1.5 text-sm font-semibold text-[var(--ink-0)]">{option.area}</p>
-          <p className="text-xs text-[var(--ink-muted)]">{option.propertyStyle}</p>
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full text-left"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="kicker text-[var(--brand-600)]">{selected ? "Base principal" : "Alternativa"}</p>
+            <p className="mt-1 text-sm font-semibold text-[var(--ink-0)]">{option.area}</p>
+            <p className="mt-0.5 text-xs text-[var(--ink-muted)]">{option.propertyStyle}</p>
+          </div>
+          <div className="shrink-0 text-right">
+            <p className="font-display text-2xl leading-none text-[var(--ink-0)]">
+              {money.format(option.estimatedTotalStayBRL)}
+            </p>
+            <p className="mt-0.5 text-[10px] text-[var(--ink-subtle)]">total da estadia</p>
+          </div>
         </div>
-        <div className="shrink-0 text-right">
-          <span className={`status-pill ${stepTone(confidenceTone)}`}>{option.confidence}</span>
-          <p className="mt-2 font-display text-2xl leading-none text-[var(--ink-0)]">{option.totalStayDisplay}</p>
-          <p className="mt-0.5 text-xs text-[var(--ink-muted)]">{option.nightlyDisplay}/noite</p>
-        </div>
-      </div>
+      </button>
 
-      {option.whyItWins && (
-        <p className="mt-2.5 line-clamp-2 text-xs leading-5 text-[var(--ink-muted)]">{option.whyItWins}</p>
-      )}
-      {option.bookingChannels.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {option.bookingChannels.map((c) => <span key={c} className="meta-pill meta-pill-brand">{c}</span>)}
+      {expanded && (
+        <div className="mt-3 border-t border-[var(--line)] pt-3 space-y-2">
+          <span className={`status-pill ${stepTone(confidenceTone)}`}>{option.confidence}</span>
+          {option.whyItWins && (
+            <p className="text-xs leading-5 text-[var(--ink-muted)]">{option.whyItWins}</p>
+          )}
+          {option.accessNotes && (
+            <p className="text-xs text-[var(--ink-subtle)]">{option.accessNotes}</p>
+          )}
+          {option.bookingChannels.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {option.bookingChannels.map((c) => <span key={c} className="meta-pill meta-pill-brand">{c}</span>)}
+            </div>
+          )}
+          <SourcePills sources={option.sources} />
         </div>
       )}
-      <SourcePills sources={option.sources} />
     </article>
   );
 }
@@ -410,11 +444,12 @@ export function DealWorkflow() {
   }, [search.results, selectedBrazilOfferId]);
 
   const selectedOverseasOffer = useMemo(() => {
-    if (!overseas.result) return null;
+    const offers = overseas.result?.offers;
+    if (!offers?.length) return null;
     return (
-      overseas.result.offers.find((o) => overseasOfferKey(o) === selectedOverseasOfferId) ??
-      overseas.result.offers.find((o) => o.id === overseas.result?.recommendedOfferId) ??
-      overseas.result.offers[0] ?? null
+      offers.find((o) => overseasOfferKey(o) === selectedOverseasOfferId) ??
+      offers.find((o) => o.id === overseas.result?.recommendedOfferId) ??
+      offers[0] ?? null
     );
   }, [overseas.result, selectedOverseasOfferId]);
 
@@ -795,6 +830,7 @@ export function DealWorkflow() {
                     <OverseasOfferCard
                       key={offer.id}
                       offer={offer}
+                      brazilReferencePriceBRL={overseas.result!.brazilReferencePriceBRL}
                       selected={offer.id === selectedOverseasOfferId}
                       onSelect={() => setSelectedOverseasOfferId(offer.id)}
                     />
@@ -934,7 +970,6 @@ export function DealWorkflow() {
                 {/* Final scorecard */}
                 <div className="result-panel mt-2">
                   <p className="kicker text-[var(--brand-600)]">Conta final</p>
-                  <h3 className="mt-2 font-display text-3xl text-[var(--ink-0)]">{tripResult.summary}</h3>
                   <p className="mt-2 text-sm leading-6 text-[var(--ink-muted)]">{tripResult.recommendation}</p>
 
                   <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
