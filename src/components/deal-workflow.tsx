@@ -436,6 +436,124 @@ function LodgingCard({ option, selected }: {
   );
 }
 
+function AgentLogs({ steps, summary, warnings }: {
+  steps: WorkflowStep[];
+  summary?: string;
+  warnings?: string[];
+}) {
+  const [open, setOpen] = useState(false);
+  if (steps.length === 0) return null;
+  return (
+    <div className="mt-4 border-t border-[var(--line)] pt-3">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2 text-xs text-[var(--ink-subtle)] hover:text-[var(--ink-muted)]"
+      >
+        <span className="font-mono uppercase tracking-wider">Logs do agente</span>
+        <span className="font-mono">({steps.length} etapas)</span>
+        <span>{open ? "▲" : "▼"}</span>
+      </button>
+      {open && (
+        <div className="mt-3 space-y-2">
+          <InlineWorkflowSteps steps={steps} />
+          {summary && (
+            <p className="mt-2 text-xs leading-5 text-[var(--ink-muted)]">{summary}</p>
+          )}
+          {warnings && warnings.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {warnings.map((w) => <span key={w} className="meta-pill">{w}</span>)}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Scorecard({ brazilPrice, productPriceBRL, tripSpendBRL, savingsBRL, recommendation, warnings }: {
+  brazilPrice: number | null;
+  productPriceBRL: number;
+  tripSpendBRL: number;
+  savingsBRL: number;
+  recommendation: string;
+  warnings: string[];
+}) {
+  const [warningsOpen, setWarningsOpen] = useState(false);
+  const positive = savingsBRL >= 0;
+
+  return (
+    <div className="result-panel mt-2">
+      <div className="flex items-center justify-between gap-2">
+        <p className="kicker text-[var(--brand-600)]">Conta final</p>
+        {warnings.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setWarningsOpen((v) => !v)}
+            className="flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface-3)] px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-[var(--ink-muted)] hover:border-[var(--brand-300)] hover:text-[var(--brand-700)]"
+          >
+            ⚠ {warnings.length} avisos {warningsOpen ? "▲" : "▼"}
+          </button>
+        )}
+      </div>
+
+      {warningsOpen && (
+        <div className="mt-2 space-y-1.5 rounded-lg border border-[var(--line)] bg-[var(--surface-3)] p-3">
+          {warnings.map((w) => (
+            <p key={w} className="text-xs leading-5 text-[var(--ink-muted)]">· {w}</p>
+          ))}
+        </div>
+      )}
+
+      <p className="mt-2 text-sm leading-6 text-[var(--ink-muted)]">{recommendation}</p>
+
+      {/* Top row: main comparison */}
+      <div className="mt-4 grid grid-cols-2 gap-2.5">
+        {/* Brasil — muted baseline */}
+        <div className="rounded-xl border border-[var(--line)] bg-[var(--surface-3)] p-3">
+          <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">Comprar no Brasil</p>
+          <p className="mt-2 font-display text-2xl text-[var(--ink-0)]">
+            {brazilPrice !== null ? money.format(brazilPrice) : "—"}
+          </p>
+        </div>
+
+        {/* Viagem total — prominent */}
+        <div className="rounded-xl border-2 border-[var(--brand-200)] bg-white p-3">
+          <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--brand-600)]">Viagem completa</p>
+          <p className="mt-2 font-display text-2xl text-[var(--ink-0)]">{money.format(tripSpendBRL)}</p>
+          <p className="mt-1 text-[10px] text-[var(--ink-subtle)]">produto + passagem + hotel</p>
+        </div>
+      </div>
+
+      {/* Bottom row: hero savings + product breakdown */}
+      <div className="mt-2.5 grid grid-cols-3 gap-2.5">
+        {/* Produto fora — small detail */}
+        <div className="rounded-xl border border-[var(--line)] bg-[var(--surface-3)] p-3">
+          <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">Produto fora</p>
+          <p className="mt-2 text-base font-semibold text-[var(--ink-0)]">{money.format(productPriceBRL)}</p>
+        </div>
+
+        {/* Ganho/perda — hero, spans 2 cols */}
+        <div className={`col-span-2 rounded-xl border-2 p-3 ${
+          positive
+            ? "border-[#A7F3D0] bg-[var(--good-soft)]"
+            : "border-[#FECACA] bg-[var(--bad-soft)]"
+        }`}>
+          <p className={`text-[10px] font-mono uppercase tracking-wider ${positive ? "text-[var(--good)]" : "text-[var(--bad)]"}`}>
+            {positive ? "Você economiza" : "Você paga a mais"}
+          </p>
+          <p className={`mt-2 font-display text-3xl font-bold ${positive ? "text-[var(--good)]" : "text-[var(--bad)]"}`}>
+            {money.format(Math.abs(savingsBRL))}
+          </p>
+          <p className={`mt-1 text-[10px] ${positive ? "text-[var(--good)]" : "text-[var(--bad)]"}`}>
+            vs. comprar no Brasil
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main component ─────────────────────────────────────────────────────────
 
 export function DealWorkflow() {
@@ -824,7 +942,10 @@ export function DealWorkflow() {
               </div>
             )}
 
-            {overseas.steps.length > 0 && <InlineWorkflowSteps steps={overseas.steps} />}
+            {/* Live steps — only while running */}
+            {overseas.status === "running" && overseas.steps.length > 0 && (
+              <InlineWorkflowSteps steps={overseas.steps} />
+            )}
 
             {overseas.error && (
               <p className="mt-3 rounded-lg border border-[var(--bad)]/30 bg-[var(--bad-soft)] p-3 text-sm text-[var(--bad)]">
@@ -834,18 +955,6 @@ export function DealWorkflow() {
 
             {overseas.result && (
               <>
-                <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-                  <p className="max-w-lg text-sm leading-6 text-[var(--ink-muted)]">
-                    {overseas.result.summary}
-                  </p>
-                </div>
-
-                {overseas.result.warnings.length > 0 && (
-                  <div className="mb-4 flex flex-wrap gap-1.5">
-                    {overseas.result.warnings.map((w) => <span key={w} className="meta-pill">{w}</span>)}
-                  </div>
-                )}
-
                 <div className="grid gap-3 sm:grid-cols-2">
                   {overseas.result.offers.map((offer) => (
                     <OverseasOfferCard
@@ -857,6 +966,12 @@ export function DealWorkflow() {
                     />
                   ))}
                 </div>
+
+                <AgentLogs
+                  steps={overseas.steps}
+                  summary={overseas.result.summary}
+                  warnings={overseas.result.warnings}
+                />
 
                 {selectedOverseasOffer && (
                   <div className="step-cta">
@@ -977,7 +1092,10 @@ export function DealWorkflow() {
               </>
             )}
 
-            {trip.steps.length > 0 && <InlineWorkflowSteps steps={trip.steps} />}
+            {/* Live steps — only while running */}
+            {trip.status === "running" && trip.steps.length > 0 && (
+              <InlineWorkflowSteps steps={trip.steps} />
+            )}
 
             {trip.error && (
               <p className="mt-3 rounded-lg border border-[var(--bad)]/30 bg-[var(--bad-soft)] p-3 text-sm text-[var(--bad)]">
@@ -989,45 +1107,14 @@ export function DealWorkflow() {
             {tripResult && (
               <>
                 {/* Final scorecard */}
-                <div className="result-panel mt-2">
-                  <p className="kicker text-[var(--brand-600)]">Conta final</p>
-                  <p className="mt-2 text-sm leading-6 text-[var(--ink-muted)]">{tripResult.recommendation}</p>
-
-                  <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-                    <div className="metric-box">
-                      <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">Brasil</p>
-                      <p className="mt-1.5 text-xl font-semibold text-[var(--ink-0)]">
-                        {selectedBrazilOffer ? money.format(selectedBrazilOffer.price) : "—"}
-                      </p>
-                    </div>
-                    <div className="metric-box">
-                      <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">Produto fora</p>
-                      <p className="mt-1.5 text-xl font-semibold text-[var(--ink-0)]">
-                        {money.format(tripResult.productPriceBRL)}
-                      </p>
-                    </div>
-                    <div className="metric-box">
-                      <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">Viagem total</p>
-                      <p className="mt-1.5 text-xl font-semibold text-[var(--ink-0)]">
-                        {money.format(tripResult.estimatedTripSpendBRL)}
-                      </p>
-                    </div>
-                    <div className="metric-box">
-                      <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">Ganho/perda</p>
-                      <p className={`mt-1.5 text-xl font-semibold ${
-                        tripResult.estimatedSavingsVsBrazilBRL >= 0 ? "text-[var(--good)]" : "text-[var(--bad)]"
-                      }`}>
-                        {money.format(tripResult.estimatedSavingsVsBrazilBRL)}
-                      </p>
-                    </div>
-                  </div>
-
-                  {tripResult.warnings.length > 0 && (
-                    <div className="mt-4 flex flex-wrap gap-1.5">
-                      {tripResult.warnings.map((w) => <span key={w} className="meta-pill">{w}</span>)}
-                    </div>
-                  )}
-                </div>
+                <Scorecard
+                  brazilPrice={selectedBrazilOffer?.price ?? null}
+                  productPriceBRL={tripResult.productPriceBRL}
+                  tripSpendBRL={tripResult.estimatedTripSpendBRL}
+                  savingsBRL={tripResult.estimatedSavingsVsBrazilBRL}
+                  recommendation={tripResult.recommendation}
+                  warnings={tripResult.warnings}
+                />
 
                 {/* Reset button */}
                 <div className="mt-4 flex justify-end">
@@ -1065,6 +1152,8 @@ export function DealWorkflow() {
                     ))}
                   </div>
                 </div>
+
+                <AgentLogs steps={trip.steps} />
               </>
             )}
           </section>
