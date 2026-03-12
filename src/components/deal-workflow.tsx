@@ -64,11 +64,11 @@ function emptyWorkflow<T>(): AsyncWorkflowState<T> {
 
 function initialTripBrief(): TripBrief {
   return {
-    origin: "Sao Paulo (GRU)",
+    origin: "São Paulo (GRU)",
     travelers: "1 adulto",
     tripLengthNights: "3",
-    stayPreference: "Apartamento simples ou hotel pratico perto de transporte.",
-    priorities: "Maximizar economia total sem sacrificar seguranca e logistica.",
+    stayPreference: "Apartamento simples ou hotel prático perto de transporte.",
+    priorities: "Maximizar economia total sem sacrificar segurança e logística.",
   };
 }
 
@@ -105,6 +105,23 @@ function stepTone(status: WorkflowStepStatus) {
     case "running":   return "tone-active";
     case "error":     return "tone-bad";
     default:          return "tone-soft";
+  }
+}
+
+function stepStatusLabel(status: WorkflowStepStatus) {
+  switch (status) {
+    case "completed": return "concluído";
+    case "running":   return "processando";
+    case "error":     return "erro";
+    default:          return "pendente";
+  }
+}
+
+function confidenceLabel(confidence: "high" | "medium" | "low") {
+  switch (confidence) {
+    case "high":   return "alta";
+    case "medium": return "média";
+    case "low":    return "baixa";
   }
 }
 
@@ -154,7 +171,7 @@ async function readWorkflowStream<T>({
 
   if (!response.ok || !response.body) {
     const fallback = await response.json().catch(() => null);
-    throw new Error(fallback?.error ?? `Nao foi possivel iniciar o workflow ${workflow}.`);
+    throw new Error(fallback?.error ?? `Não foi possível iniciar o workflow ${workflow}.`);
   }
 
   const reader = response.body.getReader();
@@ -203,7 +220,7 @@ function InlineWorkflowSteps({ steps }: { steps: WorkflowStep[] }) {
     <div className="mt-4 space-y-2">
       {steps.map((step) => (
         <div key={step.stepId} className="workflow-step-row">
-          <span className={`status-pill shrink-0 ${stepTone(step.status)}`}>{step.status}</span>
+          <span className={`status-pill shrink-0 ${stepTone(step.status)}`}>{stepStatusLabel(step.status)}</span>
           <div className="min-w-0">
             <p className="text-sm font-medium text-[var(--ink-0)]">{step.label}</p>
             {step.message && (
@@ -278,7 +295,7 @@ function OverseasOfferCard({ offer, brazilReferencePriceBRL, selected, onSelect 
         </p>
         <div className="flex shrink-0 items-center gap-1.5">
           {selected && <span className="status-pill tone-active">selecionado</span>}
-          <span className={`status-pill ${stepTone(confidenceTone)}`}>{offer.confidence}</span>
+          <span className={`status-pill ${stepTone(confidenceTone)}`}>{confidenceLabel(offer.confidence)}</span>
         </div>
       </div>
 
@@ -344,7 +361,7 @@ function TicketCard({ option, selected }: { option: TicketResearchOption; select
 
       {expanded && (
         <div className="mt-3 border-t border-[var(--line)] pt-3 space-y-2">
-          <span className={`status-pill ${stepTone(confidenceTone)}`}>{option.confidence}</span>
+          <span className={`status-pill ${stepTone(confidenceTone)}`}>{confidenceLabel(option.confidence)}</span>
           {option.whyItWins && (
             <p className="text-xs leading-5 text-[var(--ink-muted)]">{option.whyItWins}</p>
           )}
@@ -396,7 +413,7 @@ function LodgingCard({ option, selected }: {
 
       {expanded && (
         <div className="mt-3 border-t border-[var(--line)] pt-3 space-y-2">
-          <span className={`status-pill ${stepTone(confidenceTone)}`}>{option.confidence}</span>
+          <span className={`status-pill ${stepTone(confidenceTone)}`}>{confidenceLabel(option.confidence)}</span>
           {option.whyItWins && (
             <p className="text-xs leading-5 text-[var(--ink-muted)]">{option.whyItWins}</p>
           )}
@@ -472,7 +489,7 @@ export function DealWorkflow() {
         .then(async (res) => {
           if (!res.ok) {
             const p = await res.json().catch(() => null);
-            throw new Error(p?.error ?? "Nao foi possivel buscar o produto agora.");
+            throw new Error(p?.error ?? "Não foi possível buscar o produto agora.");
           }
           return res.json() as Promise<SearchResponse>;
         })
@@ -551,13 +568,13 @@ export function DealWorkflow() {
       setOverseas((c) => ({
         ...c,
         status: c.result ? "ready" : "error",
-        error: c.result ? "" : "Nenhum resultado internacional retornou.",
+        error: c.result ? "" : "Nenhum resultado internacional foi retornado.",
       }));
     } catch (error) {
       if (controller.signal.aborted) return;
       setOverseas((c) => ({
         ...c, status: "error",
-        error: error instanceof Error ? error.message : "Nao foi possivel concluir a pesquisa internacional.",
+        error: error instanceof Error ? error.message : "Não foi possível concluir a pesquisa internacional.",
       }));
     }
   }
@@ -599,13 +616,13 @@ export function DealWorkflow() {
       setTrip((c) => ({
         ...c,
         status: c.result ? "ready" : "error",
-        error: c.result ? "" : "Nao foi possivel montar a viagem.",
+        error: c.result ? "" : "Não foi possível montar a viagem.",
       }));
     } catch (error) {
       if (controller.signal.aborted) return;
       setTrip((c) => ({
         ...c, status: "error",
-        error: error instanceof Error ? error.message : "Nao foi possivel concluir a pesquisa de viagem.",
+        error: error instanceof Error ? error.message : "Não foi possível concluir a pesquisa de viagem.",
       }));
     }
   }
@@ -635,8 +652,8 @@ export function DealWorkflow() {
   ];
 
   return (
-    <main className="min-h-screen" style={{ backgroundColor: "var(--surface-0)" }}>
-      <div className="mx-auto w-full max-w-[860px] px-4 py-10 sm:px-6">
+    <main className="flex min-h-screen flex-col" style={{ backgroundColor: "var(--surface-0)" }}>
+      <div className="mx-auto w-full max-w-[860px] flex-1 px-4 py-10 sm:px-6">
 
         {/* ── Header ── */}
         <header className="mb-8 text-center">
@@ -1049,10 +1066,18 @@ export function DealWorkflow() {
           </section>
         )}
 
-        <footer className="mt-10 pb-6 text-center">
-          <p className="text-xs text-[var(--ink-subtle)]">Price Trip · hackathon</p>
-        </footer>
       </div>
+      <footer className="py-6 text-center">
+        <p className="text-xs text-[var(--ink-subtle)]">
+          Criado por Eduardo Fazolo
+          {" · "}
+          <a href="https://www.linkedin.com/in/eduardofazoloverona/" target="_blank" rel="noreferrer"
+            className="hover:text-[var(--brand-600)] underline-offset-2 hover:underline">LinkedIn</a>
+          {" · "}
+          <a href="https://github.com/EduardoFazolo" target="_blank" rel="noreferrer"
+            className="hover:text-[var(--brand-600)] underline-offset-2 hover:underline">GitHub</a>
+        </p>
+      </footer>
     </main>
   );
 }

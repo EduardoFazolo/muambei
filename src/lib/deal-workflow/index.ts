@@ -275,7 +275,7 @@ function cleanPositiveNumber(value: unknown) {
 function normalizeOverseasInput(input: unknown): OverseasWorkflowInput {
   if (!input || typeof input !== "object") {
     throw new TripResearchError(
-      "Overseas research requires query, product name, and Brazil price.",
+      "A pesquisa internacional requer produto, nome de referência e preço no Brasil.",
       400,
       "invalid_request",
     );
@@ -290,7 +290,7 @@ function normalizeOverseasInput(input: unknown): OverseasWorkflowInput {
 
   if (!query || !referenceProduct || !brazilReferencePriceBRL) {
     throw new TripResearchError(
-      "Overseas research requires query, product name, and Brazil price.",
+      "A pesquisa internacional requer produto, nome de referência e preço no Brasil.",
       400,
       "invalid_request",
     );
@@ -306,7 +306,7 @@ function normalizeOverseasInput(input: unknown): OverseasWorkflowInput {
 function normalizeTripInput(input: unknown): TripWorkflowInput {
   if (!input || typeof input !== "object") {
     throw new TripResearchError(
-      "Trip workflow requires origin, travelers, stay inputs, and the selected overseas offer.",
+      "O planejamento de viagem requer origem, viajantes, preferências de estadia e a oferta internacional selecionada.",
       400,
       "invalid_request",
     );
@@ -333,7 +333,7 @@ function normalizeTripInput(input: unknown): TripWorkflowInput {
     !selectedOffer?.id
   ) {
     throw new TripResearchError(
-      "Trip workflow requires origin, travelers, nights, Brazil price, and the selected overseas offer.",
+      "O planejamento de viagem requer origem, viajantes, noites, preço no Brasil e a oferta internacional selecionada.",
       400,
       "invalid_request",
     );
@@ -514,7 +514,7 @@ export async function researchTripWorkflow(
 
   if (!featuredTicket) {
     throw new TripResearchError(
-      "Ticket research did not return usable flight windows.",
+      "A pesquisa de passagens não retornou janelas de voo utilizáveis.",
       502,
       "invalid_response",
     );
@@ -528,7 +528,7 @@ export async function researchTripWorkflow(
 
   if (!featuredLodging) {
     throw new TripResearchError(
-      "Lodging research did not return usable options.",
+      "A pesquisa de hospedagem não retornou opções utilizáveis.",
       502,
       "invalid_response",
     );
@@ -556,8 +556,8 @@ export async function researchTripWorkflow(
       normalized.brazilReferencePriceBRL - estimatedTripSpendBRL,
     recommendation:
       estimatedTripSpendBRL < normalized.brazilReferencePriceBRL
-        ? "A viagem ainda pode valer financeiramente se voce realmente conseguir fechar o produto e a janela sugeridos."
-        : "Com os custos atuais, a viagem parece pior do que comprar no Brasil, a menos que existam outros motivos para ir.",
+        ? "A viagem ainda pode valer financeiramente se você conseguir fechar o produto e a janela sugeridos."
+        : "Com os custos atuais, a viagem parece mais cara do que comprar no Brasil, a menos que existam outros motivos para ir.",
     warnings: [...tickets.warnings, ...lodging.warnings],
   };
 }

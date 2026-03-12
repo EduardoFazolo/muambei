@@ -92,14 +92,14 @@ export async function POST(request: NextRequest) {
     payload = (await request.json()) as WorkflowRequest;
   } catch {
     return Response.json(
-      { error: "Workflow expects a valid JSON body." },
+      { error: "O corpo da requisição deve ser um JSON válido." },
       { status: 400 },
     );
   }
 
   if (!payload?.workflow || !["overseas", "trip"].includes(payload.workflow)) {
     return Response.json(
-      { error: "Workflow must be either 'overseas' or 'trip'." },
+      { error: "Workflow deve ser 'overseas' ou 'trip'." },
       { status: 400 },
     );
   }
@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
               stepId: "market-scan",
               label: "Agente de mercado",
               status: "completed",
-              message: "Pesquisa internacional concluida com ofertas priorizadas.",
+              message: "Pesquisa internacional concluída com ofertas priorizadas.",
             }),
           ),
         );
@@ -200,7 +200,7 @@ export async function POST(request: NextRequest) {
 
         if (!featuredTicket) {
           throw new TripResearchError(
-            "Ticket research did not return usable flight windows.",
+            "A pesquisa de passagens não retornou janelas de voo utilizáveis.",
             502,
             "invalid_response",
           );
@@ -249,7 +249,7 @@ export async function POST(request: NextRequest) {
 
         if (!featuredLodging) {
           throw new TripResearchError(
-            "Lodging research did not return usable options.",
+            "A pesquisa de hospedagem não retornou opções utilizáveis.",
             502,
             "invalid_response",
           );
