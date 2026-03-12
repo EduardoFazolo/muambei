@@ -358,7 +358,7 @@ function TicketCard({ option, selected }: { option: TicketResearchOption; select
             <p className="font-display text-2xl leading-none text-[var(--ink-0)]">
               {money.format(option.estimatedRoundTripBRL)}
             </p>
-            <p className="mt-0.5 text-[10px] text-[var(--ink-subtle)]">{option.displayPrice} · ida e volta</p>
+            <p className="mt-0.5 text-[10px] text-[var(--ink-subtle)]">{option.displayPrice}</p>
           </div>
         </div>
       </button>
