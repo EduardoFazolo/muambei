@@ -10,7 +10,7 @@ export type WorkflowStepStatus = "pending" | "running" | "completed" | "error";
 
 export type OverseasMarketOffer = {
   id: string;
-  region: "united_states" | "europe";
+  region: "united_states" | "europe" | "paraguay";
   country: string;
   city: string;
   airportHint: string;

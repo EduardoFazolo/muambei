@@ -126,7 +126,11 @@ function confidenceLabel(confidence: "high" | "medium" | "low") {
 }
 
 function regionLabel(region: OverseasMarketOffer["region"]) {
-  return region === "united_states" ? "EUA" : "Europa";
+  switch (region) {
+    case "united_states": return "EUA";
+    case "europe":        return "Europa";
+    case "paraguay":      return "Paraguai";
+  }
 }
 
 function formatDate(value: string) {
@@ -1078,6 +1082,7 @@ export function DealWorkflow() {
             className="hover:text-[var(--brand-600)] underline-offset-2 hover:underline">GitHub</a>
         </p>
       </footer>
+
     </main>
   );
 }

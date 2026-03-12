@@ -303,9 +303,14 @@ button:disabled { cursor: not-allowed; }
 
 /* ── Step CTA row ── */
 .step-cta {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
   margin-top: 1.25rem;
-  padding-top: 1.25rem;
+  padding: 1rem 1.25rem;
   border-top: 1.5px solid var(--line);
+  background: var(--surface-1);
+  border-radius: 0 0 1rem 1rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
