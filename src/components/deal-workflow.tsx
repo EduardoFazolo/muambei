@@ -695,10 +695,7 @@ export function DealWorkflow() {
   const [selectedLodgingId, setSelectedLodgingId] = useState("");
   const [historyOpen, setHistoryOpen] = useState(false);
   const [usdToBrl, setUsdToBrl] = useState(5.7); // fallback; fetched on mount
-  const [history, setHistory] = useState<HistoryEntry[]>(() => {
-    if (typeof window === "undefined") return [];
-    return loadHistory();
-  });
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
   const restoringRef = useRef(false);
   const searchAbortRef   = useRef<AbortController | null>(null);
   const overseasAbortRef = useRef<AbortController | null>(null);
@@ -723,6 +720,7 @@ export function DealWorkflow() {
   }, [overseas.result, selectedOverseasOfferId]);
 
   useEffect(() => {
+    setHistory(loadHistory());
     fetch("/api/rates")
       .then((r) => r.json())
       .then((d) => { if (d?.usdToBrl) setUsdToBrl(d.usdToBrl); })
@@ -1160,10 +1158,11 @@ export function DealWorkflow() {
               </div>
             )}
 
-            {hasSearchResults && selectedBrazilOffer && (
-              <div className="step-cta">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-[11px] uppercase tracking-widest text-[var(--ink-subtle)]">Oferta selecionada</p>
+            <div className="step-cta">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] uppercase tracking-widest text-[var(--ink-subtle)]">
+                  {selectedBrazilOffer ? "Oferta selecionada" : "Price Trip"}
+                </p>
                   <button
                     type="button"
                     onClick={() => setHistoryOpen(true)}
@@ -1178,6 +1177,7 @@ export function DealWorkflow() {
                     )}
                   </button>
                 </div>
+              {hasSearchResults && selectedBrazilOffer && (
                 <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
                   <div className="flex items-baseline gap-2 min-w-0">
                     <span className="font-display text-2xl text-[var(--ink-0)]">
@@ -1194,8 +1194,8 @@ export function DealWorkflow() {
                     {overseas.status === "running" ? "Pesquisando…" : "Pesquisar fora do Brasil →"}
                   </button>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </section>
         )}
 
