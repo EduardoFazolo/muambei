@@ -269,13 +269,30 @@ async function readWorkflowStream<T>({
 // ── UI sub-components ──────────────────────────────────────────────────────
 
 function StepBadge({ n, status }: { n: number; status: "active" | "done" | "idle" }) {
+  const getIcon = () => {
+    switch (n) {
+      case 1: // Brasil (Map Pin)
+        return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>;
+      case 2: // Exterior (Globe)
+        return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>;
+      case 3: // Viagem (Suitcase)
+        return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 8h16v12H4z"/><path d="M8 8V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>;
+      default:
+        return <>{n}</>;
+    }
+  };
+
   return (
     <div className={`step-num ${
       status === "done" ? "step-num-done" :
       status === "active" ? "step-num-active" :
       "step-num-idle"
     }`}>
-      {status === "done" ? "✓" : n}
+      {status === "done" ? (
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      ) : (
+        getIcon()
+      )}
     </div>
   );
 }
@@ -325,7 +342,7 @@ function SearchOfferCard({ offer, selected, onSelect }: {
         {offer.title}
       </p>
       <div className="mt-3 flex items-end justify-between gap-2">
-        <p className="font-display text-2xl leading-none text-[var(--ink-0)]">
+        <p className="font-body text-[1.75rem] font-bold tracking-tight leading-none text-[var(--ink-0)]">
           {money.format(offer.price)}
         </p>
         <a href={offer.url} target="_blank" rel="noreferrer"
@@ -370,7 +387,7 @@ function OverseasOfferCard({ offer, brazilReferencePriceBRL, selected, onSelect,
       </p>
       <p className="mt-0.5 text-xs text-[var(--ink-muted)]">{offer.storeName}</p>
 
-      <div className="mt-3 grid grid-cols-3 gap-2">
+      <div className="mt-3 grid grid-cols-3 gap-3">
         <div className="metric-box">
           <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">Brasil</p>
           <p className="mt-1 text-sm font-semibold text-[var(--ink-0)]">{money.format(brazilReferencePriceBRL)}</p>
@@ -445,7 +462,7 @@ function TicketCard({ option, selected, onSelect }: {
         <p className="mt-0.5 text-[11px] text-[var(--ink-subtle)]">{option.displayPrice}</p>
       </button>
       <div className="mt-3 flex items-center justify-between gap-3">
-        <p className="font-display text-3xl text-[var(--ink-0)]">
+        <p className="font-body text-4xl font-bold tracking-tight text-[var(--ink-0)]">
           {money.format(option.estimatedRoundTripBRL)}
         </p>
         {onSelect && (
@@ -500,7 +517,7 @@ function LodgingCard({ option, selected, onSelect }: {
       </button>
       <div className="mt-3 flex items-center justify-between gap-3">
         <div>
-          <p className="font-display text-3xl text-[var(--ink-0)]">
+          <p className="font-body text-4xl font-bold tracking-tight text-[var(--ink-0)]">
             {money.format(option.estimatedTotalStayBRL)}
           </p>
           <p className="text-[10px] text-[var(--ink-subtle)]">total da estadia</p>
@@ -614,7 +631,7 @@ function Scorecard({ brazilPrice, productPriceBRL, tripSpendBRL, savingsBRL, rec
       {/* Top row: main comparison */}
       <div className="mt-4 grid grid-cols-2 gap-2.5">
         {/* Brasil — muted baseline */}
-        <div className="rounded-xl border border-[var(--line)] bg-[var(--surface-3)] p-3">
+        <div className="rounded-2xl bg-[var(--surface-2)] p-4 shadow-sm">
           <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">Comprar no Brasil</p>
           <p className="mt-2 font-display text-2xl text-[var(--ink-0)]">
             {brazilPrice !== null ? money.format(brazilPrice) : "—"}
@@ -622,7 +639,8 @@ function Scorecard({ brazilPrice, productPriceBRL, tripSpendBRL, savingsBRL, rec
         </div>
 
         {/* Viagem total — prominent */}
-        <div className="rounded-xl border-2 border-[var(--brand-200)] bg-white p-3">
+        <div className="rounded-2xl bg-[var(--surface-1)] p-4 relative overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.06),0_2px_8px_rgba(41,93,250,0.04)]">
+          <div className="absolute top-0 inset-x-0 h-1.5 bg-[var(--brand-500)]"></div>
           <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--brand-600)]">Viagem completa</p>
           <p className="mt-2 font-display text-2xl text-[var(--ink-0)]">{money.format(tripSpendBRL)}</p>
           <p className="mt-1 text-[10px] text-[var(--ink-subtle)]">produto + passagem + hotel</p>
@@ -632,21 +650,21 @@ function Scorecard({ brazilPrice, productPriceBRL, tripSpendBRL, savingsBRL, rec
       {/* Bottom row: hero savings + product breakdown */}
       <div className="mt-2.5 grid grid-cols-3 gap-2.5">
         {/* Produto fora — small detail */}
-        <div className="rounded-xl border border-[var(--line)] bg-[var(--surface-3)] p-3">
+        <div className="rounded-2xl bg-[var(--surface-2)] p-4 shadow-sm">
           <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">Produto fora</p>
           <p className="mt-2 text-base font-semibold text-[var(--ink-0)]">{money.format(productPriceBRL)}</p>
         </div>
 
         {/* Ganho/perda — hero, spans 2 cols */}
-        <div className={`col-span-2 rounded-xl border-2 p-3 ${
+        <div className={`col-span-2 rounded-2xl p-4 shadow-[0_4px_16px_rgba(0,0,0,0.04)] ${
           positive
-            ? "border-[#A7F3D0] bg-[var(--good-soft)]"
-            : "border-[#FECACA] bg-[var(--bad-soft)]"
+            ? "bg-[#EAF9F0]"
+            : "bg-[#FFEBEA]"
         }`}>
           <p className={`text-[10px] font-mono uppercase tracking-wider ${positive ? "text-[var(--good)]" : "text-[var(--bad)]"}`}>
             {positive ? "Você economiza" : "Você paga a mais"}
           </p>
-          <p className={`mt-2 font-display text-3xl font-bold ${positive ? "text-[var(--good)]" : "text-[var(--bad)]"}`}>
+          <p className={`mt-2 font-body text-[2.5rem] leading-none font-bold tracking-tight ${positive ? "text-[var(--good)]" : "text-[var(--bad)]"}`}>
             {money.format(Math.abs(savingsBRL))}
           </p>
           <p className={`mt-1 text-[10px] ${positive ? "text-[var(--good)]" : "text-[var(--bad)]"}`}>
@@ -1049,18 +1067,18 @@ export function DealWorkflow() {
       <div className="mx-auto w-full max-w-[860px] flex-1 px-4 py-10 sm:px-6">
 
         {/* ── Header ── */}
-        <header className="relative mb-8 text-center">
+        <header className="relative mb-12 text-center">
           <p className="kicker text-[var(--brand-600)]">Muambei</p>
-          <h1 className="mt-2 font-display text-4xl text-[var(--ink-0)] sm:text-5xl">
+          <h1 className="mt-3 text-[2.75rem] font-bold tracking-tight text-[var(--ink-0)] leading-none sm:text-6xl">
             Vale a viagem?
           </h1>
-          <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[var(--ink-muted)]">
+          <p className="mx-auto mt-4 max-w-sm text-[1.1rem] leading-snug text-[var(--ink-muted)]">
             Compare o produto no Brasil, pesquise no exterior, e calcule se a viagem fecha a conta.
           </p>
         </header>
 
-        {/* ── Tab step navigator ── */}
-        <nav className="mb-6 flex rounded-xl border border-[var(--line)] bg-[var(--surface-3)] p-1">
+        {/* ── Tab step navigator (Floating pill) ── */}
+        <nav className="mx-auto mb-10 flex max-w-[380px] rounded-full bg-[var(--surface-1)] p-1.5 shadow-[0_4px_24px_rgba(0,0,0,0.06),0_1px_4px_rgba(0,0,0,0.03)] border border-[rgba(0,0,0,0.03)]">
           {NAV_STEPS.map(({ n, label }) => {
             const accessible = canGoTo(n);
             const done = stepDone(n);
@@ -1085,7 +1103,7 @@ export function DealWorkflow() {
           <section className="step-panel">
             <div className="mb-5 flex items-center gap-3">
               <StepBadge n={1} status={stepDone(1) ? "done" : "active"} />
-              <h2 className="font-display text-2xl text-[var(--ink-0)]">Busca no Brasil</h2>
+              <h2 className="font-display text-[1.75rem] font-semibold tracking-tight text-[var(--ink-0)]">Busca no Brasil</h2>
               {search.status === "loading" && (
                 <span className="ml-auto status-pill tone-active">Buscando…</span>
               )}
@@ -1117,7 +1135,7 @@ export function DealWorkflow() {
             </div>
 
             {hasSearchResults && (
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <div className="mt-5 grid gap-4 sm:grid-cols-2 sm:gap-5">
                 {search.results?.offers.map((offer) => (
                   <SearchOfferCard
                     key={offerKey(offer)}
@@ -1180,7 +1198,7 @@ export function DealWorkflow() {
               {hasSearchResults && selectedBrazilOffer && (
                 <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
                   <div className="flex items-baseline gap-2 min-w-0">
-                    <span className="font-display text-2xl text-[var(--ink-0)]">
+                    <span className="font-body text-3xl font-bold tracking-tight text-[var(--ink-0)]">
                       {brazilBestPrice !== null ? money.format(brazilBestPrice) : "—"}
                     </span>
                     <span className="truncate text-xs text-[var(--ink-muted)]">{selectedBrazilOffer.storeName}</span>
@@ -1204,7 +1222,7 @@ export function DealWorkflow() {
           <section className="step-panel">
             <div className="mb-5 flex items-center gap-3">
               <StepBadge n={2} status={stepDone(2) ? "done" : "active"} />
-              <h2 className="font-display text-2xl text-[var(--ink-0)]">Pesquisa Internacional</h2>
+              <h2 className="font-display text-[1.75rem] font-semibold tracking-tight text-[var(--ink-0)]">Pesquisa Internacional</h2>
               {overseas.status === "running" && (
                 <span className="ml-auto status-pill tone-active">Pesquisando…</span>
               )}
@@ -1258,7 +1276,7 @@ export function DealWorkflow() {
 
             {overseas.result && (
               <>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
                   {overseas.result.offers.map((offer) => (
                     <OverseasOfferCard
                       key={offer.id}
@@ -1297,7 +1315,7 @@ export function DealWorkflow() {
                     </div>
                     <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
                       <div className="flex items-baseline gap-2 min-w-0">
-                        <span className="font-display text-2xl text-[var(--ink-0)]">
+                        <span className="font-body text-3xl font-bold tracking-tight text-[var(--ink-0)]">
                           {money.format(selectedOverseasOffer.estimatedPriceBRL)}
                         </span>
                         <span className="truncate text-xs text-[var(--ink-muted)]">
@@ -1324,7 +1342,7 @@ export function DealWorkflow() {
           <section className="step-panel">
             <div className="mb-5 flex items-center gap-3">
               <StepBadge n={3} status={stepDone(3) ? "done" : "active"} />
-              <h2 className="font-display text-2xl text-[var(--ink-0)]">Planejar a Viagem</h2>
+              <h2 className="font-display text-[1.75rem] font-semibold tracking-tight text-[var(--ink-0)]">Planejar a Viagem</h2>
               {trip.status === "running" && (
                 <span className="ml-auto status-pill tone-active">Calculando…</span>
               )}
