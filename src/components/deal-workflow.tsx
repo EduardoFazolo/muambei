@@ -1611,6 +1611,9 @@ export function DealWorkflow() {
           {" · "}
           <a href="https://github.com/EduardoFazolo" target="_blank" rel="noreferrer"
             className="hover:text-[var(--brand-600)] underline-offset-2 hover:underline">GitHub</a>
+          {" · "}
+          <a href="https://github.com/EduardoFazolo/muambei" target="_blank" rel="noreferrer"
+            className="hover:text-[var(--brand-600)] underline-offset-2 hover:underline">Ver projeto no GitHub</a>
         </p>
       </footer>
 
