@@ -17,6 +17,11 @@ import type {
   WorkflowStepStatus,
 } from "@/lib/deal-workflow/types";
 import type { SearchOffer, SearchResponse } from "@/lib/search/types";
+import {
+  formatTravelerCount,
+  normalizeTravelerCountInput,
+  parseTravelerCount,
+} from "@/lib/travelers";
 
 type WorkflowStep = {
   stepId: string;
@@ -103,7 +108,7 @@ function emptyWorkflow<T>(): AsyncWorkflowState<T> {
 function initialTripBrief(): TripBrief {
   return {
     origin: "São Paulo (GRU)",
-    travelers: "1 adulto",
+    travelers: "1 Adulto",
     tripLengthNights: "3",
     stayPreference: "Apartamento simples ou hotel prático perto de transporte.",
     priorities: "Maximizar economia total sem sacrificar segurança e logística.",
@@ -1016,7 +1021,7 @@ export function DealWorkflow() {
         payload: {
           productQuery: query.trim(),
           origin: tripBrief.origin,
-          travelers: tripBrief.travelers,
+          travelers: formatTravelerCount(parseTravelerCount(tripBrief.travelers)),
           tripLengthNights: Number.parseInt(tripBrief.tripLengthNights, 10),
           stayPreference: tripBrief.stayPreference,
           priorities: tripBrief.priorities,
@@ -1443,11 +1448,26 @@ export function DealWorkflow() {
                   </label>
                   <label className="block">
                     <span className="kicker text-[var(--ink-muted)] tracking-widest">Viajantes</span>
-                    <input
-                      value={tripBrief.travelers}
-                      onChange={(e) => setTripBrief((c) => ({ ...c, travelers: e.target.value }))}
-                      className="field-input mt-1.5"
-                    />
+                    <div className="relative mt-1.5">
+                      <input
+                        type="number"
+                        min={1}
+                        max={6}
+                        inputMode="numeric"
+                        value={parseTravelerCount(tripBrief.travelers)}
+                        onChange={(e) =>
+                          setTripBrief((c) => ({
+                            ...c,
+                            travelers: normalizeTravelerCountInput(e.target.value),
+                          }))
+                        }
+                        aria-label="Quantidade de adultos"
+                        className="field-input pr-24 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                      />
+                      <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-sm font-medium text-[var(--ink-muted)]">
+                        {parseTravelerCount(tripBrief.travelers) === 1 ? "Adulto" : "Adultos"}
+                      </span>
+                    </div>
                   </label>
                   <label className="block">
                     <span className="kicker text-[var(--ink-muted)] tracking-widest">Noites</span>

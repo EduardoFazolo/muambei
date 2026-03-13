@@ -8,6 +8,11 @@ import type {
   TicketResearchOption,
   TripResearchResponse,
 } from "@/lib/trip-research/types";
+import {
+  formatTravelerCount,
+  normalizeTravelerCountInput,
+  parseTravelerCount,
+} from "@/lib/travelers";
 
 type TripFormState = {
   origin: string;
@@ -278,6 +283,7 @@ export function TripPlanner() {
           },
           body: JSON.stringify({
             ...form,
+            travelers: formatTravelerCount(parseTravelerCount(form.travelers)),
             tripLengthNights: Number.parseInt(form.tripLengthNights, 10),
           }),
         });
@@ -397,12 +403,23 @@ export function TripPlanner() {
 
           <label className="space-y-2">
             <span className="eyebrow text-[var(--muted)]">Viajantes</span>
-            <input
-              value={form.travelers}
-              onChange={(event) => updateField("travelers", event.target.value)}
-              className="field-input"
-              placeholder="2 adultos"
-            />
+            <div className="relative">
+              <input
+                type="number"
+                min={1}
+                max={6}
+                inputMode="numeric"
+                value={parseTravelerCount(form.travelers)}
+                onChange={(event) =>
+                  updateField("travelers", normalizeTravelerCountInput(event.target.value))
+                }
+                aria-label="Quantidade de adultos"
+                className="field-input pr-24 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              />
+              <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-sm font-medium text-[var(--muted)]">
+                {parseTravelerCount(form.travelers) === 1 ? "Adulto" : "Adultos"}
+              </span>
+            </div>
           </label>
 
           <label className="space-y-2">
