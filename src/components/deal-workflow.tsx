@@ -114,6 +114,64 @@ function offerKey(offer: Pick<SearchOffer, "storeKey" | "url">) {
   return `${offer.storeKey}:${offer.url}`;
 }
 
+// ── Entry requirement badge ─────────────────────────────────────────────────
+
+type EntryReq = "visa" | "passport" | "id";
+
+function getEntryReq(region: OverseasMarketOffer["region"], country: string): EntryReq {
+  if (region === "united_states") return "visa";
+  if (region === "paraguay") return "id";
+  if (region === "europe") return "passport";
+  const c = country.toLowerCase();
+  const idCountries = ["paraguai", "paraguay", "argentina", "uruguai", "uruguay", "chile", "bolívia", "bolivia", "peru", "equador", "ecuador", "colômbia", "colombia", "venezuela"];
+  const visaCountries = ["eua", "usa", "estados unidos", "united states", "canadá", "canada", "austrália", "australia", "china", "índia", "india", "rússia", "russia"];
+  if (visaCountries.some((n) => c.includes(n))) return "visa";
+  if (idCountries.some((n) => c.includes(n))) return "id";
+  return "passport";
+}
+
+const ENTRY_META: Record<EntryReq, { label: string; detail: string; badgeColor: string; badgeBg: string; tooltipAccent: string }> = {
+  visa:     { label: "Visto obrigatório", detail: "Brasileiros precisam de visto para entrar. Solicite com antecedência no consulado.", badgeColor: "#B45309", badgeBg: "#FEF3C7", tooltipAccent: "#FCD34D" },
+  passport: { label: "Só passaporte",     detail: "Brasileiros entram sem visto, mas precisam de passaporte válido.",                  badgeColor: "#B45309", badgeBg: "#FEF3C7", tooltipAccent: "#FCD34D" },
+  id:       { label: "Só identidade",     detail: "Brasileiros entram apenas com RG ou CNH — sem passaporte necessário.",               badgeColor: "#34C759", badgeBg: "#E8F8EE", tooltipAccent: "#4ade80" },
+};
+
+function EntryBadge({ region, country }: { region: OverseasMarketOffer["region"]; country: string }) {
+  const [open, setOpen] = useState(false);
+  const req = getEntryReq(region, country);
+  const meta = ENTRY_META[req];
+
+  return (
+    <div className="relative inline-flex" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <button
+        type="button"
+        aria-label={meta.label}
+        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+        className="flex h-6 w-6 items-center justify-center rounded-full transition-transform hover:scale-110"
+        style={{ backgroundColor: meta.badgeBg, color: meta.badgeColor }}
+      >
+        <svg width="13" height="10" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+          <rect x="1" y="1" width="14" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
+          <circle cx="5.5" cy="5.5" r="1.5" stroke="currentColor" strokeWidth="1.2"/>
+          <path d="M9 4h4M9 7h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+        </svg>
+      </button>
+
+      {open && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="absolute bottom-full left-1/2 z-50 mb-2 w-52 -translate-x-1/2 rounded-xl px-3 py-2.5 text-left shadow-xl"
+          style={{ backgroundColor: "#1C1917", pointerEvents: "none" }}
+        >
+          <div className="absolute -bottom-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45" style={{ backgroundColor: "#1C1917" }} />
+          <p className="text-[10px] font-mono uppercase tracking-wider" style={{ color: meta.tooltipAccent }}>{meta.label}</p>
+          <p className="mt-0.5 text-[11px] leading-4" style={{ color: "rgba(255,255,255,0.75)" }}>{meta.detail}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function overseasOfferKey(offer: Pick<OverseasMarketOffer, "id">) {
   return offer.id;
 }
@@ -377,6 +435,7 @@ function OverseasOfferCard({ offer, brazilReferencePriceBRL, selected, onSelect,
           {regionLabel(offer.region)} · {offer.city}
         </p>
         <div className="flex shrink-0 items-center gap-1.5">
+          <EntryBadge region={offer.region} country={offer.country} />
           {selected && <span className="status-pill tone-active">selecionado</span>}
           <span className={`status-pill ${stepTone(confidenceTone)}`}>{confidenceLabel(offer.confidence)}</span>
         </div>
