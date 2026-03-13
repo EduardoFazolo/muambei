@@ -23,7 +23,7 @@
   --ink-subtle: #94A3B8;
 
   /* ── Surfaces & Backgrounds (Cooler tones) ── */
-  --surface-0: #F8FAFC; /* Cool light gray/blue background */
+  --surface-0: #e3f6fd; /* Matches logo background */
   --surface-1: #FFFFFF; /* Pure white layer */
   --surface-2: #F1F5F9; /* Grouped secondary background */
   --surface-3: #E2E8F0; /* Separator light */

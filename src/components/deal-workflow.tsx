@@ -1113,14 +1113,17 @@ export function DealWorkflow() {
 
   return (
     <main className="flex min-h-screen flex-col" style={{ backgroundColor: "var(--surface-0)" }}>
-      <div className="mx-auto w-full max-w-[860px] flex-1 px-4 py-10 sm:px-6">
+      <div className="mx-auto w-full max-w-[860px] flex-1 px-4 py-8 sm:px-6 sm:py-12">
 
         {/* ── Header ── */}
-        <header className="relative mb-12 text-center">
-          <p className="kicker text-[var(--brand-600)] text-[12px] tracking-widest">Muambei</p>
-          <h1 className="mt-3 text-4xl sm:text-5xl font-bold tracking-tight text-[var(--ink-0)] leading-tight">
-            Vale a viagem?
-          </h1>
+        <header className="relative mb-6 flex flex-col items-center text-center">
+          <img 
+            src="/Muambei full.png" 
+            alt="Muambei Viagens e Compras" 
+            className="w-full max-w-[400px] sm:max-w-[500px] -my-10 sm:-my-16 object-contain" 
+          />
+          <span className="relative z-10 mt-6 text-4xl sm:text-5xl font-bold tracking-tight text-[var(--ink-0)] leading-tight">
+          </span>
           <p className="mx-auto mt-4 max-w-sm text-[1.1rem] leading-snug text-[var(--ink-muted)]">
             Compare o produto no Brasil, pesquise no exterior, e calcule se a viagem fecha a conta.
           </p>
