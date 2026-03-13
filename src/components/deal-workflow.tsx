@@ -392,6 +392,35 @@ function SourcePills({ sources }: { sources: { label: string; url: string; note:
   );
 }
 
+function HistoryButton({
+  count,
+  muted = false,
+  onClick,
+}: {
+  count: number;
+  muted?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Histórico"
+      className={`history-trigger ${muted ? "history-trigger-muted" : ""}`}
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+      {count > 0 && (
+        <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand-600)] text-[9px] font-bold text-white">
+          {count > 9 ? "9+" : count}
+        </span>
+      )}
+    </button>
+  );
+}
+
 function SearchOfferCard({ offer, selected, onSelect }: {
   offer: SearchOffer; selected: boolean; onSelect: () => void;
 }) {
@@ -1096,6 +1125,8 @@ export function DealWorkflow() {
     return brazilRef - activeTripSpend;
   }, [tripResult, activeTripSpend, selectedBrazilOffer]);
 
+  const waitingForBrazilSelection = hasSearchResults && !selectedBrazilOffer;
+
   const canGoTo = (step: 1 | 2 | 3): boolean => {
     if (step === 1) return true;
     if (step === 2) return hasSearchResults;
@@ -1158,11 +1189,11 @@ export function DealWorkflow() {
         {/* ── Step 1: Brazil search ── */}
         {currentStep === 1 && (
           <section className="step-panel">
-            <div className="mb-5 flex items-center gap-3">
+            <div className="mb-5 flex flex-wrap items-center gap-y-2 gap-x-3">
               <StepBadge n={1} status={stepDone(1) ? "done" : "active"} />
-              <h2 className="font-display text-[1.75rem] font-semibold tracking-tight text-[var(--ink-0)]">Busca no Brasil</h2>
+              <h2 className="font-display text-2xl sm:text-[1.75rem] font-semibold tracking-tight text-[var(--ink-0)] whitespace-nowrap">Busca no Brasil</h2>
               {search.status === "loading" && (
-                <span className="ml-auto status-pill tone-active">Buscando…</span>
+                <span className="ml-auto status-pill tone-active shrink-0">Buscando…</span>
               )}
             </div>
 
@@ -1234,7 +1265,7 @@ export function DealWorkflow() {
               </div>
             )}
 
-            <div className="step-cta">
+            <div className={`step-cta ${waitingForBrazilSelection ? "step-cta-idle" : ""}`}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 {hasSearchResults && selectedBrazilOffer ? (
                   <div className="flex items-baseline gap-2 min-w-0">
@@ -1243,24 +1274,10 @@ export function DealWorkflow() {
                     </span>
                     <span className="truncate text-xs text-[var(--ink-muted)]">{selectedBrazilOffer.storeName}</span>
                   </div>
-                ) : (
-                  <div />
-                )}
+                ) :null}
                 
                 <div className="flex items-center justify-end gap-3 w-full sm:w-auto">
-                  <button
-                    type="button"
-                    onClick={() => setHistoryOpen(true)}
-                    aria-label="Histórico"
-                    className="relative flex h-10 w-10 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full border border-[var(--line-strong)] bg-[var(--surface-0)] text-[var(--ink-muted)] hover:text-[var(--ink-0)] transition-colors"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    {history.length > 0 && (
-                      <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand-600)] text-[9px] font-bold text-white">
-                        {history.length > 9 ? "9+" : history.length}
-                      </span>
-                    )}
-                  </button>
+                  <HistoryButton count={history.length} muted={waitingForBrazilSelection} onClick={() => setHistoryOpen(true)} />
                   
                   {hasSearchResults && selectedBrazilOffer && (
                     <button
@@ -1281,11 +1298,11 @@ export function DealWorkflow() {
         {/* ── Step 2: Overseas research ── */}
         {currentStep === 2 && (
           <section className="step-panel">
-            <div className="mb-5 flex items-center gap-3">
+            <div className="mb-5 flex flex-wrap items-center gap-y-2 gap-x-3">
               <StepBadge n={2} status={stepDone(2) ? "done" : "active"} />
-              <h2 className="font-display text-[1.75rem] font-semibold tracking-tight text-[var(--ink-0)]">Pesquisa Internacional</h2>
+              <h2 className="font-display text-2xl sm:text-[1.75rem] font-semibold tracking-tight text-[var(--ink-0)] whitespace-nowrap">Pesquisa Internacional</h2>
               {overseas.status === "running" && (
-                <span className="ml-auto status-pill tone-active">Pesquisando…</span>
+                <span className="ml-auto status-pill tone-active shrink-0">Pesquisando…</span>
               )}
             </div>
 
@@ -1370,19 +1387,7 @@ export function DealWorkflow() {
                       </div>
                       
                       <div className="flex items-center justify-end gap-3 w-full sm:w-auto">
-                        <button
-                          type="button"
-                          onClick={() => setHistoryOpen(true)}
-                          aria-label="Histórico"
-                          className="relative flex h-10 w-10 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full border border-[var(--line-strong)] bg-[var(--surface-0)] text-[var(--ink-muted)] hover:text-[var(--ink-0)] transition-colors"
-                        >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                          {history.length > 0 && (
-                            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand-600)] text-[9px] font-bold text-white">
-                              {history.length > 9 ? "9+" : history.length}
-                            </span>
-                          )}
-                        </button>
+                        <HistoryButton count={history.length} onClick={() => setHistoryOpen(true)} />
                         
                         <button
                           type="button"
@@ -1403,11 +1408,11 @@ export function DealWorkflow() {
         {/* ── Step 3: Trip planning ── */}
         {currentStep === 3 && (
           <section className="step-panel">
-            <div className="mb-5 flex items-center gap-3">
+            <div className="mb-5 flex flex-wrap items-center gap-y-2 gap-x-3">
               <StepBadge n={3} status={stepDone(3) ? "done" : "active"} />
-              <h2 className="font-display text-[1.75rem] font-semibold tracking-tight text-[var(--ink-0)]">Planejar a Viagem</h2>
+              <h2 className="font-display text-2xl sm:text-[1.75rem] font-semibold tracking-tight text-[var(--ink-0)] whitespace-nowrap">Planejar a Viagem</h2>
               {trip.status === "running" && (
-                <span className="ml-auto status-pill tone-active">Calculando…</span>
+                <span className="ml-auto status-pill tone-active shrink-0">Calculando…</span>
               )}
             </div>
 
@@ -1574,19 +1579,7 @@ export function DealWorkflow() {
 
                 <div className="step-cta">
                   <div className="flex items-center justify-center sm:justify-end gap-3 w-full">
-                    <button
-                      type="button"
-                      onClick={() => setHistoryOpen(true)}
-                      aria-label="Histórico"
-                      className="relative flex h-10 w-10 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full border border-[var(--line-strong)] bg-[var(--surface-0)] text-[var(--ink-muted)] hover:text-[var(--ink-0)] transition-colors"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                      {history.length > 0 && (
-                        <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand-600)] text-[9px] font-bold text-white">
-                          {history.length > 9 ? "9+" : history.length}
-                        </span>
-                      )}
-                    </button>
+                    <HistoryButton count={history.length} onClick={() => setHistoryOpen(true)} />
                     
                     <button type="button" onClick={resetAll} className="step-cta-action py-2.5">
                       Nova busca →
