@@ -40,6 +40,44 @@ type TripBrief = {
   priorities: string;
 };
 
+type HistoryEntry = {
+  id: string;
+  savedAt: number;
+  query: string;
+  destinationCity: string;
+  destinationCountry: string;
+  savingsBRL: number;
+  hasTripResult: boolean;
+  currentStep: 1 | 2 | 3;
+  search: { status: "idle" | "loading" | "ready" | "error"; error: string; results: SearchResponse | null };
+  selectedBrazilOfferId: string;
+  selectedOverseasOfferId: string;
+  tripBrief: TripBrief;
+  overseas: AsyncWorkflowState<OverseasResearchResponse>;
+  trip: AsyncWorkflowState<TripPlanResponse>;
+  selectedTicketId: string;
+  selectedLodgingId: string;
+};
+
+const HISTORY_KEY = "price-trip:history";
+const MAX_HISTORY = 20;
+
+function loadHistory(): HistoryEntry[] {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    return raw ? (JSON.parse(raw) as HistoryEntry[]) : [];
+  } catch { return []; }
+}
+
+function relativeTime(ts: number): string {
+  const mins = Math.floor((Date.now() - ts) / 60_000);
+  if (mins < 1) return "agora";
+  if (mins < 60) return `${mins}min atrás`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h atrás`;
+  return `${Math.floor(hrs / 24)}d atrás`;
+}
+
 const SAMPLE_QUERIES = [
   "iphone 15",
   "playstation 5 slim",
@@ -590,12 +628,19 @@ export function DealWorkflow() {
     results: SearchResponse | null;
   }>({ status: "idle", error: "", results: null });
   const [selectedBrazilOfferId, setSelectedBrazilOfferId] = useState("");
+  const [searchSourcesOpen, setSearchSourcesOpen] = useState(false);
   const [selectedOverseasOfferId, setSelectedOverseasOfferId] = useState("");
   const [tripBrief, setTripBrief] = useState<TripBrief>(initialTripBrief);
   const [overseas, setOverseas] = useState<AsyncWorkflowState<OverseasResearchResponse>>(() => emptyWorkflow());
   const [trip, setTrip] = useState<AsyncWorkflowState<TripPlanResponse>>(() => emptyWorkflow());
   const [selectedTicketId, setSelectedTicketId] = useState("");
   const [selectedLodgingId, setSelectedLodgingId] = useState("");
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [history, setHistory] = useState<HistoryEntry[]>(() => {
+    if (typeof window === "undefined") return [];
+    return loadHistory();
+  });
+  const restoringRef = useRef(false);
   const searchAbortRef   = useRef<AbortController | null>(null);
   const overseasAbortRef = useRef<AbortController | null>(null);
   const tripAbortRef     = useRef<AbortController | null>(null);
@@ -660,6 +705,7 @@ export function DealWorkflow() {
   }, [deferredQuery]);
 
   useEffect(() => {
+    if (restoringRef.current) return;
     setOverseas(emptyWorkflow());
     setTrip(emptyWorkflow());
     setSelectedOverseasOfferId("");
@@ -673,7 +719,10 @@ export function DealWorkflow() {
     );
   }, [overseas.result]);
 
-  useEffect(() => { setTrip(emptyWorkflow()); }, [selectedOverseasOfferId]);
+  useEffect(() => {
+    if (restoringRef.current) return;
+    setTrip(emptyWorkflow());
+  }, [selectedOverseasOfferId]);
 
   useEffect(() => {
     return () => {
@@ -682,6 +731,101 @@ export function DealWorkflow() {
       tripAbortRef.current?.abort();
     };
   }, []);
+
+  function saveHistoryEntry(entry: HistoryEntry) {
+    try {
+      const existing = loadHistory();
+      const next = [entry, ...existing].slice(0, MAX_HISTORY);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+      setHistory(next);
+    } catch { /* quota exceeded or SSR */ }
+  }
+
+  // Auto-save when overseas result arrives
+  useEffect(() => {
+    if (overseas.status !== "ready" || !overseas.result) return;
+    const offer =
+      overseas.result.offers.find((o) => o.id === selectedOverseasOfferId) ??
+      overseas.result.offers.find((o) => o.id === overseas.result!.recommendedOfferId) ??
+      overseas.result.offers[0];
+    saveHistoryEntry({
+      id: crypto.randomUUID(),
+      savedAt: Date.now(),
+      query,
+      destinationCity: offer?.city ?? "",
+      destinationCountry: offer?.country ?? "",
+      savingsBRL: offer ? (selectedBrazilOffer?.price ?? 0) - offer.estimatedPriceBRL : 0,
+      hasTripResult: false,
+      currentStep,
+      search,
+      selectedBrazilOfferId,
+      selectedOverseasOfferId,
+      tripBrief,
+      overseas,
+      trip,
+      selectedTicketId,
+      selectedLodgingId,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [overseas.status]);
+
+  // Auto-save (update) when trip result arrives
+  useEffect(() => {
+    if (trip.status !== "ready" || !trip.result) return;
+    const r = trip.result;
+    const tk = r.ticketOptions.find((t) => t.id === selectedTicketId) ?? r.ticketOptions.find((t) => t.id === r.bestTicketId) ?? r.ticketOptions[0];
+    const lg = r.lodgingOptions.find((l) => l.id === selectedLodgingId) ?? r.lodgingOptions.find((l) => l.id === r.bestLodgingId) ?? r.lodgingOptions[0];
+    const spend = tk && lg ? r.productPriceBRL + tk.estimatedRoundTripBRL + lg.estimatedTotalStayBRL : r.estimatedTripSpendBRL;
+    saveHistoryEntry({
+      id: crypto.randomUUID(),
+      savedAt: Date.now(),
+      query,
+      destinationCity: r.destinationCity,
+      destinationCountry: r.destinationCountry,
+      savingsBRL: (selectedBrazilOffer?.price ?? r.productPriceBRL) - spend,
+      hasTripResult: true,
+      currentStep,
+      search,
+      selectedBrazilOfferId,
+      selectedOverseasOfferId,
+      tripBrief,
+      overseas,
+      trip,
+      selectedTicketId,
+      selectedLodgingId,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trip.status]);
+
+  function restoreEntry(entry: HistoryEntry) {
+    restoringRef.current = true;
+    setQuery(entry.query);
+    setSearch(entry.search);
+    setSelectedBrazilOfferId(entry.selectedBrazilOfferId);
+    setSelectedOverseasOfferId(entry.selectedOverseasOfferId);
+    setTripBrief(entry.tripBrief);
+    setOverseas(entry.overseas);
+    setTrip(entry.trip);
+    setSelectedTicketId(entry.selectedTicketId);
+    setSelectedLodgingId(entry.selectedLodgingId);
+    setCurrentStep(entry.currentStep);
+    setHistoryOpen(false);
+    setTimeout(() => { restoringRef.current = false; }, 0);
+  }
+
+  function resetAll() {
+    setQuery("");
+    setSearch({ status: "idle", error: "", results: null });
+    setSelectedBrazilOfferId("");
+    setSelectedOverseasOfferId("");
+    setTripBrief(initialTripBrief());
+    setOverseas(emptyWorkflow());
+    setTrip(emptyWorkflow());
+    setSelectedTicketId("");
+    setSelectedLodgingId("");
+    setCurrentStep(1);
+    setHistoryOpen(false);
+  }
 
   async function startOverseasWorkflow() {
     if (!selectedBrazilOffer || overseas.status === "running") return;
@@ -837,7 +981,20 @@ export function DealWorkflow() {
       <div className="mx-auto w-full max-w-[860px] flex-1 px-4 py-10 sm:px-6">
 
         {/* ── Header ── */}
-        <header className="mb-8 text-center">
+        <header className="relative mb-8 text-center">
+          <button
+            type="button"
+            onClick={() => setHistoryOpen(true)}
+            aria-label="Histórico"
+            className="absolute right-0 top-0 flex h-8 w-8 items-center justify-center rounded-full border border-[var(--line-strong)] bg-[var(--surface-1)] text-[var(--ink-muted)] hover:text-[var(--ink-0)] transition-colors"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            {history.length > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand-600)] text-[9px] font-bold text-white">
+                {history.length > 9 ? "9+" : history.length}
+              </span>
+            )}
+          </button>
           <p className="kicker text-[var(--brand-600)]">Price Trip</p>
           <h1 className="mt-2 font-display text-4xl text-[var(--ink-0)] sm:text-5xl">
             Vale a viagem?
@@ -897,25 +1054,12 @@ export function DealWorkflow() {
             <div className="mt-3 min-h-5 text-sm text-[var(--ink-muted)]">
               {search.status === "error"
                 ? search.error
-                : hasSearchResults
-                  ? `${search.results?.offers.length} ofertas encontradas`
-                  : query.trim().length >= 3 && search.status !== "loading"
-                    ? "Nenhuma oferta encontrada."
-                    : query.trim().length > 0 && query.trim().length < 3
-                      ? "Continue digitando…"
-                      : ""}
+                : !hasSearchResults && query.trim().length >= 3 && search.status !== "loading"
+                  ? "Nenhuma oferta encontrada."
+                  : query.trim().length > 0 && query.trim().length < 3
+                    ? "Continue digitando…"
+                    : ""}
             </div>
-
-            {search.results && (
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {search.results.providers.map((p) => (
-                  <span key={p.storeKey} className={`status-pill ${providerTone(p.status)}`}>
-                    {p.storeName} · {statusLabel(p.status)}
-                    {p.status === "ok" ? ` (${p.offers.length})` : ""}
-                  </span>
-                ))}
-              </div>
-            )}
 
             {hasSearchResults && (
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -927,6 +1071,35 @@ export function DealWorkflow() {
                     onSelect={() => setSelectedBrazilOfferId(offerKey(offer))}
                   />
                 ))}
+              </div>
+            )}
+
+            {hasSearchResults && search.results && (
+              <div className="mt-4 border-t border-[var(--line)] pt-3">
+                <button
+                  type="button"
+                  onClick={() => setSearchSourcesOpen((v) => !v)}
+                  className="flex items-center gap-1.5 text-xs text-[var(--ink-muted)] hover:text-[var(--ink-0)] transition-colors"
+                >
+                  <svg
+                    width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                    className={`transition-transform ${searchSourcesOpen ? "rotate-180" : ""}`}
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                  {search.results.offers.length} ofertas · {search.results.providers.length} fontes
+                </button>
+                {searchSourcesOpen && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {search.results.providers.map((p) => (
+                      <span key={p.storeKey} className={`status-pill ${providerTone(p.status)}`}>
+                        {p.storeName} · {statusLabel(p.status)}
+                        {p.status === "ok" ? ` (${p.offers.length})` : ""}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -1244,6 +1417,82 @@ export function DealWorkflow() {
             className="hover:text-[var(--brand-600)] underline-offset-2 hover:underline">GitHub</a>
         </p>
       </footer>
+
+
+      {/* ── History backdrop ── */}
+      {historyOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
+          onClick={() => setHistoryOpen(false)}
+        />
+      )}
+
+      {/* ── History panel — bottom sheet on mobile, right drawer on desktop ── */}
+      <aside
+        className={[
+          "fixed z-50 flex flex-col",
+          "bottom-0 left-0 right-0 h-[75vh] rounded-t-2xl",
+          "sm:bottom-0 sm:left-auto sm:right-0 sm:top-0 sm:h-full sm:w-[360px] sm:rounded-none sm:rounded-l-2xl",
+          "border border-[var(--line)] bg-[var(--surface-1)] shadow-[0_-4px_40px_rgba(0,0,0,0.15)]",
+          "transition-transform duration-300 ease-in-out",
+          historyOpen ? "" : "translate-y-full sm:translate-y-0 sm:translate-x-full",
+        ].join(" ")}
+      >
+        {/* Panel header */}
+        <div className="flex shrink-0 items-center justify-between border-b border-[var(--line)] px-5 py-4">
+          <div className="flex items-center gap-2">
+            <p className="font-display text-base text-[var(--ink-0)]">Histórico</p>
+            {history.length > 0 && (
+              <span className="code-chip">{history.length}</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={resetAll} className="action-pill">
+              Nova busca
+            </button>
+            <button
+              type="button"
+              onClick={() => setHistoryOpen(false)}
+              className="flex h-7 w-7 items-center justify-center rounded-full text-[var(--ink-subtle)] hover:bg-[var(--surface-3)] hover:text-[var(--ink-0)]"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        {/* Entries */}
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+          {history.length === 0 ? (
+            <p className="mt-10 text-center text-sm text-[var(--ink-subtle)]">
+              Nenhuma pesquisa ainda.
+            </p>
+          ) : (
+            history.map((entry) => (
+              <button
+                key={entry.id}
+                type="button"
+                onClick={() => restoreEntry(entry)}
+                className="w-full rounded-xl border border-[var(--line)] bg-[var(--surface-3)] px-3 py-2.5 text-left transition-colors hover:border-[var(--brand-300)] hover:bg-[var(--brand-50)]"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p className="line-clamp-1 text-sm font-medium text-[var(--ink-0)]">{entry.query}</p>
+                  <span className={`status-pill shrink-0 ${entry.savingsBRL >= 0 ? "tone-completed" : "tone-error"}`}>
+                    {entry.savingsBRL >= 0 ? "+" : ""}{money.format(entry.savingsBRL)}
+                  </span>
+                </div>
+                {entry.destinationCity && (
+                  <p className="mt-0.5 text-xs text-[var(--ink-muted)]">
+                    {entry.destinationCity}, {entry.destinationCountry}
+                  </p>
+                )}
+                <p className="mt-1 font-mono text-[10px] text-[var(--ink-subtle)]">
+                  {relativeTime(entry.savedAt)} · {entry.hasTripResult ? "viagem completa" : "só exterior"}
+                </p>
+              </button>
+            ))
+          )}
+        </div>
+      </aside>
 
     </main>
   );

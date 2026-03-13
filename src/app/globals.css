@@ -116,6 +116,7 @@ button:disabled { cursor: not-allowed; }
 }
 
 /* ── Buttons ── */
+
 .action-pill {
   display: inline-flex;
   align-items: center;
