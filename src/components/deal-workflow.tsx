@@ -1117,8 +1117,8 @@ export function DealWorkflow() {
 
         {/* ── Header ── */}
         <header className="relative mb-12 text-center">
-          <p className="kicker text-[var(--brand-600)]">Muambei</p>
-          <h1 className="mt-3 text-[2.75rem] font-bold tracking-tight text-[var(--ink-0)] leading-none sm:text-6xl">
+          <p className="kicker text-[var(--brand-600)] text-[12px] tracking-widest">Muambei</p>
+          <h1 className="mt-3 text-4xl sm:text-5xl font-bold tracking-tight text-[var(--ink-0)] leading-tight">
             Vale a viagem?
           </h1>
           <p className="mx-auto mt-4 max-w-sm text-[1.1rem] leading-snug text-[var(--ink-muted)]">
@@ -1167,7 +1167,8 @@ export function DealWorkflow() {
 
             <div className="mt-3 flex flex-wrap gap-2">
               {SAMPLE_QUERIES.map((s) => (
-                <button key={s} type="button" onClick={() => setQuery(s)} className="action-pill">
+                <button key={s} type="button" onClick={() => setQuery(s)} className="action-pill bg-[var(--surface-2)] text-[var(--ink-muted)] hover:bg-[var(--surface-3)] border-transparent group transition-all">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-40 group-hover:opacity-100 transition-opacity"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                   {s}
                 </button>
               ))}
@@ -1226,42 +1227,45 @@ export function DealWorkflow() {
             )}
 
             <div className="step-cta">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[11px] uppercase tracking-widest text-[var(--ink-subtle)]">
-                  {selectedBrazilOffer ? "Oferta selecionada" : "Muambei"}
-                </p>
-                  <button
-                    type="button"
-                    onClick={() => setHistoryOpen(true)}
-                    aria-label="Histórico"
-                    className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--line-strong)] bg-[var(--surface-0)] text-[var(--ink-muted)] hover:text-[var(--ink-0)] transition-colors"
-                  >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    {history.length > 0 && (
-                      <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand-600)] text-[9px] font-bold text-white">
-                        {history.length > 9 ? "9+" : history.length}
-                      </span>
-                    )}
-                  </button>
-                </div>
-              {hasSearchResults && selectedBrazilOffer && (
-                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                {hasSearchResults && selectedBrazilOffer ? (
                   <div className="flex items-baseline gap-2 min-w-0">
                     <span className="font-body text-3xl font-bold tracking-tight text-[var(--ink-0)]">
                       {brazilBestPrice !== null ? money.format(brazilBestPrice) : "—"}
                     </span>
                     <span className="truncate text-xs text-[var(--ink-muted)]">{selectedBrazilOffer.storeName}</span>
                   </div>
+                ) : (
+                  <div />
+                )}
+                
+                <div className="flex items-center justify-end gap-3 w-full sm:w-auto">
                   <button
                     type="button"
-                    onClick={startOverseasWorkflow}
-                    disabled={overseas.status === "running"}
-                    className="step-cta-action"
+                    onClick={() => setHistoryOpen(true)}
+                    aria-label="Histórico"
+                    className="relative flex h-10 w-10 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full border border-[var(--line-strong)] bg-[var(--surface-0)] text-[var(--ink-muted)] hover:text-[var(--ink-0)] transition-colors"
                   >
-                    {overseas.status === "running" ? "Pesquisando…" : "Pesquisar fora do Brasil →"}
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    {history.length > 0 && (
+                      <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand-600)] text-[9px] font-bold text-white">
+                        {history.length > 9 ? "9+" : history.length}
+                      </span>
+                    )}
                   </button>
+                  
+                  {hasSearchResults && selectedBrazilOffer && (
+                    <button
+                      type="button"
+                      onClick={startOverseasWorkflow}
+                      disabled={overseas.status === "running"}
+                      className="step-cta-action py-2.5"
+                    >
+                      {overseas.status === "running" ? "Pesquisando…" : "Pesquisar fora do Brasil →"}
+                    </button>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           </section>
         )}
@@ -1289,9 +1293,10 @@ export function DealWorkflow() {
                 <button
                   type="button"
                   onClick={() => setCurrentStep(1)}
-                  className="ml-auto text-xs text-[var(--brand-600)] hover:underline"
+                  className="ml-auto action-pill py-1 px-2.5 h-auto text-[11px] text-[var(--ink-muted)] hover:text-[var(--ink-0)]"
                 >
-                  ← alterar
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                  alterar
                 </button>
               </div>
             )}
@@ -1346,23 +1351,7 @@ export function DealWorkflow() {
 
                 {selectedOverseasOffer && (
                   <div className="step-cta">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-[11px] uppercase tracking-widest text-[var(--ink-subtle)]">Destino selecionado</p>
-                      <button
-                        type="button"
-                        onClick={() => setHistoryOpen(true)}
-                        aria-label="Histórico"
-                        className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--line-strong)] bg-[var(--surface-0)] text-[var(--ink-muted)] hover:text-[var(--ink-0)] transition-colors"
-                      >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        {history.length > 0 && (
-                          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand-600)] text-[9px] font-bold text-white">
-                            {history.length > 9 ? "9+" : history.length}
-                          </span>
-                        )}
-                      </button>
-                    </div>
-                    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="flex items-baseline gap-2 min-w-0">
                         <span className="font-body text-3xl font-bold tracking-tight text-[var(--ink-0)]">
                           {money.format(selectedOverseasOffer.estimatedPriceBRL)}
@@ -1371,13 +1360,30 @@ export function DealWorkflow() {
                           {selectedOverseasOffer.city}, {selectedOverseasOffer.country}
                         </span>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setCurrentStep(3)}
-                        className="step-cta-action"
-                      >
-                        Planejar viagem →
-                      </button>
+                      
+                      <div className="flex items-center justify-end gap-3 w-full sm:w-auto">
+                        <button
+                          type="button"
+                          onClick={() => setHistoryOpen(true)}
+                          aria-label="Histórico"
+                          className="relative flex h-10 w-10 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full border border-[var(--line-strong)] bg-[var(--surface-0)] text-[var(--ink-muted)] hover:text-[var(--ink-0)] transition-colors"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                          {history.length > 0 && (
+                            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand-600)] text-[9px] font-bold text-white">
+                              {history.length > 9 ? "9+" : history.length}
+                            </span>
+                          )}
+                        </button>
+                        
+                        <button
+                          type="button"
+                          onClick={() => setCurrentStep(3)}
+                          className="step-cta-action py-2.5"
+                        >
+                          Planejar viagem →
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1412,9 +1418,10 @@ export function DealWorkflow() {
                 <button
                   type="button"
                   onClick={() => setCurrentStep(2)}
-                  className="text-xs text-[var(--brand-600)] hover:underline"
+                  className="action-pill py-1 px-2.5 h-auto text-[11px] text-[var(--ink-muted)] hover:text-[var(--ink-0)]"
                 >
-                  ← alterar
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                  alterar
                 </button>
               </div>
             )}
@@ -1424,7 +1431,7 @@ export function DealWorkflow() {
               <>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="block sm:col-span-2">
-                    <span className="kicker text-[var(--ink-subtle)]">Origem</span>
+                    <span className="kicker text-[var(--ink-muted)] tracking-widest">Origem</span>
                     <input
                       value={tripBrief.origin}
                       onChange={(e) => setTripBrief((c) => ({ ...c, origin: e.target.value }))}
@@ -1432,7 +1439,7 @@ export function DealWorkflow() {
                     />
                   </label>
                   <label className="block">
-                    <span className="kicker text-[var(--ink-subtle)]">Viajantes</span>
+                    <span className="kicker text-[var(--ink-muted)] tracking-widest">Viajantes</span>
                     <input
                       value={tripBrief.travelers}
                       onChange={(e) => setTripBrief((c) => ({ ...c, travelers: e.target.value }))}
@@ -1440,7 +1447,7 @@ export function DealWorkflow() {
                     />
                   </label>
                   <label className="block">
-                    <span className="kicker text-[var(--ink-subtle)]">Noites</span>
+                    <span className="kicker text-[var(--ink-muted)] tracking-widest">Noites</span>
                     <input
                       type="number" min={2} max={7}
                       value={tripBrief.tripLengthNights}
@@ -1543,26 +1550,24 @@ export function DealWorkflow() {
                 <AgentLogs steps={trip.steps} />
 
                 <div className="step-cta">
-                  <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-                    <p className="text-[11px] uppercase tracking-widest text-[var(--ink-subtle)]">Pesquisa concluída</p>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setHistoryOpen(true)}
-                        aria-label="Histórico"
-                        className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--line-strong)] bg-[var(--surface-0)] text-[var(--ink-muted)] hover:text-[var(--ink-0)] transition-colors"
-                      >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        {history.length > 0 && (
-                          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand-600)] text-[9px] font-bold text-white">
-                            {history.length > 9 ? "9+" : history.length}
-                          </span>
-                        )}
-                      </button>
-                      <button type="button" onClick={resetAll} className="step-cta-action">
-                        Nova busca →
-                      </button>
-                    </div>
+                  <div className="flex items-center justify-center sm:justify-end gap-3 w-full">
+                    <button
+                      type="button"
+                      onClick={() => setHistoryOpen(true)}
+                      aria-label="Histórico"
+                      className="relative flex h-10 w-10 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full border border-[var(--line-strong)] bg-[var(--surface-0)] text-[var(--ink-muted)] hover:text-[var(--ink-0)] transition-colors"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      {history.length > 0 && (
+                        <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand-600)] text-[9px] font-bold text-white">
+                          {history.length > 9 ? "9+" : history.length}
+                        </span>
+                      )}
+                    </button>
+                    
+                    <button type="button" onClick={resetAll} className="step-cta-action py-2.5">
+                      Nova busca →
+                    </button>
                   </div>
                 </div>
               </>
