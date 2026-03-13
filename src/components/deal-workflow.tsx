@@ -177,7 +177,9 @@ function formatDate(value: string) {
 }
 
 function formatWindow(option: TicketResearchOption) {
-  return `${formatDate(option.departureWindow.start)} – ${formatDate(option.departureWindow.end)} / volta ${formatDate(option.returnWindow.start)} – ${formatDate(option.returnWindow.end)}`;
+  const dep = formatDate(option.departureWindow.start);
+  const ret = formatDate(option.returnWindow.end);
+  return `${dep} → ${ret} · ${option.tripLengthNights}n`;
 }
 
 function mergeStep(
@@ -393,31 +395,29 @@ function TicketCard({ option, selected, onSelect }: {
 
   return (
     <article className={`offer-card ${selected ? "offer-card-selected" : ""}`}>
-      <div className="flex items-start justify-between gap-3">
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          className="min-w-0 flex-1 text-left"
-        >
-          <p className="kicker text-[var(--brand-600)]">{selected ? "Melhor janela" : "Alternativa"}</p>
-          <p className="mt-1 line-clamp-1 text-sm font-semibold text-[var(--ink-0)]">{option.title}</p>
-          <p className="mt-0.5 text-xs text-[var(--ink-muted)]">{formatWindow(option)}</p>
-        </button>
-        <div className="shrink-0 flex flex-col items-end gap-2">
-          <p className="font-display text-2xl leading-none text-[var(--ink-0)]">
-            {money.format(option.estimatedRoundTripBRL)}
-          </p>
-          <p className="text-[10px] text-[var(--ink-subtle)]">{option.displayPrice}</p>
-          {onSelect && (
-            <button
-              type="button"
-              onClick={onSelect}
-              className={`action-pill text-[11px] ${selected ? "action-pill-primary" : ""}`}
-            >
-              {selected ? "✓ selecionado" : "selecionar"}
-            </button>
-          )}
-        </div>
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full text-left"
+      >
+        <p className="kicker text-[var(--brand-600)]">{selected ? "Melhor janela" : "Alternativa"}</p>
+        <p className="mt-1.5 text-base font-semibold leading-snug text-[var(--ink-0)]">{option.title}</p>
+        <p className="mt-1 text-xs text-[var(--ink-muted)]">{formatWindow(option)}</p>
+        <p className="mt-0.5 text-[11px] text-[var(--ink-subtle)]">{option.displayPrice}</p>
+      </button>
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <p className="font-display text-3xl text-[var(--ink-0)]">
+          {money.format(option.estimatedRoundTripBRL)}
+        </p>
+        {onSelect && (
+          <button
+            type="button"
+            onClick={onSelect}
+            className={`action-pill text-[11px] ${selected ? "action-pill-primary" : ""}`}
+          >
+            {selected ? "✓ selecionado" : "selecionar"}
+          </button>
+        )}
       </div>
 
       {expanded && (
@@ -450,31 +450,31 @@ function LodgingCard({ option, selected, onSelect }: {
 
   return (
     <article className={`offer-card ${selected ? "offer-card-selected" : ""}`}>
-      <div className="flex items-start justify-between gap-3">
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          className="min-w-0 flex-1 text-left"
-        >
-          <p className="kicker text-[var(--brand-600)]">{selected ? "Base principal" : "Alternativa"}</p>
-          <p className="mt-1 text-sm font-semibold text-[var(--ink-0)]">{option.area}</p>
-          <p className="mt-0.5 text-xs text-[var(--ink-muted)]">{option.propertyStyle}</p>
-        </button>
-        <div className="shrink-0 flex flex-col items-end gap-2">
-          <p className="font-display text-2xl leading-none text-[var(--ink-0)]">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full text-left"
+      >
+        <p className="kicker text-[var(--brand-600)]">{selected ? "Base principal" : "Alternativa"}</p>
+        <p className="mt-1.5 text-base font-semibold leading-snug text-[var(--ink-0)]">{option.area}</p>
+        <p className="mt-0.5 text-xs text-[var(--ink-muted)]">{option.propertyStyle} · {option.nightlyDisplay}</p>
+      </button>
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <div>
+          <p className="font-display text-3xl text-[var(--ink-0)]">
             {money.format(option.estimatedTotalStayBRL)}
           </p>
           <p className="text-[10px] text-[var(--ink-subtle)]">total da estadia</p>
-          {onSelect && (
-            <button
-              type="button"
-              onClick={onSelect}
-              className={`action-pill text-[11px] ${selected ? "action-pill-primary" : ""}`}
-            >
-              {selected ? "✓ selecionado" : "selecionar"}
-            </button>
-          )}
         </div>
+        {onSelect && (
+          <button
+            type="button"
+            onClick={onSelect}
+            className={`action-pill text-[11px] ${selected ? "action-pill-primary" : ""}`}
+          >
+            {selected ? "✓ selecionado" : "selecionar"}
+          </button>
+        )}
       </div>
 
       {expanded && (
@@ -922,7 +922,7 @@ export function DealWorkflow() {
   }
 
   const hasSearchResults  = Boolean(search.results?.offers.length);
-  const brazilBestPrice   = search.results?.offers[0]?.price ?? null;
+  const brazilBestPrice   = selectedBrazilOffer?.price ?? search.results?.offers[0]?.price ?? null;
   const tripResult        = trip.result;
 
   // Active ticket/lodging selection — initialized from best IDs, user can override
@@ -982,19 +982,6 @@ export function DealWorkflow() {
 
         {/* ── Header ── */}
         <header className="relative mb-8 text-center">
-          <button
-            type="button"
-            onClick={() => setHistoryOpen(true)}
-            aria-label="Histórico"
-            className="absolute right-0 top-0 flex h-8 w-8 items-center justify-center rounded-full border border-[var(--line-strong)] bg-[var(--surface-1)] text-[var(--ink-muted)] hover:text-[var(--ink-0)] transition-colors"
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            {history.length > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand-600)] text-[9px] font-bold text-white">
-                {history.length > 9 ? "9+" : history.length}
-              </span>
-            )}
-          </button>
           <p className="kicker text-[var(--brand-600)]">Price Trip</p>
           <h1 className="mt-2 font-display text-4xl text-[var(--ink-0)] sm:text-5xl">
             Vale a viagem?
@@ -1105,24 +1092,38 @@ export function DealWorkflow() {
 
             {hasSearchResults && selectedBrazilOffer && (
               <div className="step-cta">
-                <div>
-                  <p className="text-xs text-[var(--ink-subtle)]">Oferta base selecionada</p>
-                  <p className="mt-0.5 text-sm text-[var(--ink-0)]">
-                    <span className="font-medium">{selectedBrazilOffer.storeName}</span>
-                    {" · "}
-                    <span className="font-display text-lg">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[11px] uppercase tracking-widest text-[var(--ink-subtle)]">Oferta selecionada</p>
+                  <button
+                    type="button"
+                    onClick={() => setHistoryOpen(true)}
+                    aria-label="Histórico"
+                    className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--line-strong)] bg-[var(--surface-0)] text-[var(--ink-muted)] hover:text-[var(--ink-0)] transition-colors"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    {history.length > 0 && (
+                      <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand-600)] text-[9px] font-bold text-white">
+                        {history.length > 9 ? "9+" : history.length}
+                      </span>
+                    )}
+                  </button>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                  <div className="flex items-baseline gap-2 min-w-0">
+                    <span className="font-display text-2xl text-[var(--ink-0)]">
                       {brazilBestPrice !== null ? money.format(brazilBestPrice) : "—"}
                     </span>
-                  </p>
+                    <span className="truncate text-xs text-[var(--ink-muted)]">{selectedBrazilOffer.storeName}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={startOverseasWorkflow}
+                    disabled={overseas.status === "running"}
+                    className="step-cta-action"
+                  >
+                    {overseas.status === "running" ? "Pesquisando…" : "Pesquisar fora do Brasil →"}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={startOverseasWorkflow}
-                  disabled={overseas.status === "running"}
-                  className={`action-pill action-pill-primary ${overseas.status === "running" ? "opacity-60" : ""}`}
-                >
-                  {overseas.status === "running" ? "Pesquisando…" : "Pesquisar fora do Brasil →"}
-                </button>
               </div>
             )}
           </section>
@@ -1207,23 +1208,39 @@ export function DealWorkflow() {
 
                 {selectedOverseasOffer && (
                   <div className="step-cta">
-                    <div>
-                      <p className="text-xs text-[var(--ink-subtle)]">Destino selecionado</p>
-                      <p className="mt-0.5 text-sm font-medium text-[var(--ink-0)]">
-                        {selectedOverseasOffer.city}, {selectedOverseasOffer.country}
-                        {" · "}
-                        <span className="font-display text-lg">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[11px] uppercase tracking-widest text-[var(--ink-subtle)]">Destino selecionado</p>
+                      <button
+                        type="button"
+                        onClick={() => setHistoryOpen(true)}
+                        aria-label="Histórico"
+                        className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--line-strong)] bg-[var(--surface-0)] text-[var(--ink-muted)] hover:text-[var(--ink-0)] transition-colors"
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        {history.length > 0 && (
+                          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand-600)] text-[9px] font-bold text-white">
+                            {history.length > 9 ? "9+" : history.length}
+                          </span>
+                        )}
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                      <div className="flex items-baseline gap-2 min-w-0">
+                        <span className="font-display text-2xl text-[var(--ink-0)]">
                           {money.format(selectedOverseasOffer.estimatedPriceBRL)}
                         </span>
-                      </p>
+                        <span className="truncate text-xs text-[var(--ink-muted)]">
+                          {selectedOverseasOffer.city}, {selectedOverseasOffer.country}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setCurrentStep(3)}
+                        className="step-cta-action"
+                      >
+                        Planejar viagem →
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setCurrentStep(3)}
-                      className="action-pill action-pill-primary"
-                    >
-                      Planejar viagem →
-                    </button>
                   </div>
                 )}
               </>
@@ -1400,6 +1417,30 @@ export function DealWorkflow() {
                 </div>
 
                 <AgentLogs steps={trip.steps} />
+
+                <div className="step-cta">
+                  <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                    <p className="text-[11px] uppercase tracking-widest text-[var(--ink-subtle)]">Pesquisa concluída</p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setHistoryOpen(true)}
+                        aria-label="Histórico"
+                        className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--line-strong)] bg-[var(--surface-0)] text-[var(--ink-muted)] hover:text-[var(--ink-0)] transition-colors"
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        {history.length > 0 && (
+                          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand-600)] text-[9px] font-bold text-white">
+                            {history.length > 9 ? "9+" : history.length}
+                          </span>
+                        )}
+                      </button>
+                      <button type="button" onClick={resetAll} className="step-cta-action">
+                        Nova busca →
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </>
             )}
           </section>
