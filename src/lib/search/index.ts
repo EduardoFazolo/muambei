@@ -1,10 +1,14 @@
 import { amazonAdapter } from "@/lib/search/adapters/amazon";
 import { americanasAdapter } from "@/lib/search/adapters/americanas";
+import { buscapeAdapter } from "@/lib/search/adapters/buscape";
 import { kabumAdapter } from "@/lib/search/adapters/kabum";
 import { mercadoLivreAdapter } from "@/lib/search/adapters/mercado-livre";
+import { webFallbackAdapter } from "@/lib/search/adapters/web-fallback";
 import type { SearchResponse, StoreAdapter } from "@/lib/search/types";
 
 const ADAPTERS: StoreAdapter[] = [
+  buscapeAdapter,
+  webFallbackAdapter,
   mercadoLivreAdapter,
   amazonAdapter,
   kabumAdapter,

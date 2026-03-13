@@ -201,3 +201,55 @@ export function withAbsoluteUrl(url: string, base: string) {
     return url;
   }
 }
+
+export function extractEmbeddedJsonObject(html: string, key: string) {
+  const start = html.indexOf(`"${key}":`);
+  if (start < 0) {
+    throw new Error(`Embedded key "${key}" not found.`);
+  }
+
+  const objectStart = html.indexOf("{", start);
+  if (objectStart < 0) {
+    throw new Error(`Embedded key "${key}" does not contain an object.`);
+  }
+
+  let depth = 0;
+  let inString = false;
+  let escaping = false;
+
+  for (let index = objectStart; index < html.length; index += 1) {
+    const char = html[index];
+
+    if (inString) {
+      if (escaping) {
+        escaping = false;
+      } else if (char === "\\") {
+        escaping = true;
+      } else if (char === "\"") {
+        inString = false;
+      }
+
+      continue;
+    }
+
+    if (char === "\"") {
+      inString = true;
+      continue;
+    }
+
+    if (char === "{") {
+      depth += 1;
+      continue;
+    }
+
+    if (char === "}") {
+      depth -= 1;
+
+      if (depth === 0) {
+        return JSON.parse(html.slice(objectStart, index + 1));
+      }
+    }
+  }
+
+  throw new Error(`Embedded key "${key}" is not a closed JSON object.`);
+}

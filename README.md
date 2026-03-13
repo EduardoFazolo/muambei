@@ -4,6 +4,8 @@ Next.js app for comparing Brazilian prices across multiple stores.
 
 ## Current collectors
 
+- Buscapé via server-rendered search payload
+- Web fallback via DuckDuckGo discovery + product-page price extraction
 - Mercado Livre via HTML scraping
 - Amazon BR via HTML scraping
 - KaBuM via embedded JSON payload
