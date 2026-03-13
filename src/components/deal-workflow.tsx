@@ -171,6 +171,27 @@ function regionLabel(region: OverseasMarketOffer["region"]) {
   }
 }
 
+const CUSTOMS_LIMIT_USD = 1000;
+
+function calcCustomsDuty(priceLocal: number, currency: string, usdToBrl: number): {
+  priceUSD: number;
+  dutyUSD: number;
+  dutyBRL: number;
+  overLimit: boolean;
+} {
+  // Convert local price to USD
+  let priceUSD: number;
+  if (currency === "USD") priceUSD = priceLocal;
+  else if (currency === "EUR") priceUSD = priceLocal * 1.08; // approximate
+  else if (currency === "PYG") priceUSD = priceLocal / 7500; // approximate
+  else priceUSD = priceLocal; // fallback assume USD
+
+  const excess = Math.max(0, priceUSD - CUSTOMS_LIMIT_USD);
+  const dutyUSD = excess * 0.5;
+  const dutyBRL = dutyUSD * usdToBrl;
+  return { priceUSD, dutyUSD, dutyBRL, overLimit: priceUSD > CUSTOMS_LIMIT_USD };
+}
+
 function formatDate(value: string) {
   const parsed = new Date(`${value}T00:00:00`);
   return Number.isNaN(parsed.getTime()) ? value : shortDate.format(parsed);
@@ -322,14 +343,15 @@ function SearchOfferCard({ offer, selected, onSelect }: {
   );
 }
 
-function OverseasOfferCard({ offer, brazilReferencePriceBRL, selected, onSelect }: {
-  offer: OverseasMarketOffer; brazilReferencePriceBRL: number; selected: boolean; onSelect: () => void;
+function OverseasOfferCard({ offer, brazilReferencePriceBRL, selected, onSelect, usdToBrl }: {
+  offer: OverseasMarketOffer; brazilReferencePriceBRL: number; selected: boolean; onSelect: () => void; usdToBrl: number;
 }) {
   const confidenceTone =
     offer.confidence === "high" ? "completed" :
     offer.confidence === "medium" ? "running" : "pending";
 
   const savings = brazilReferencePriceBRL - offer.estimatedPriceBRL;
+  const customs = calcCustomsDuty(offer.priceLocal, offer.priceCurrency, usdToBrl);
 
   return (
     <article onClick={onSelect} className={`offer-card ${selected ? "offer-card-selected" : ""}`}>
@@ -371,6 +393,23 @@ function OverseasOfferCard({ offer, brazilReferencePriceBRL, selected, onSelect 
       {offer.caveats.length > 0 && (
         <p className="mt-1.5 text-xs text-[var(--ink-subtle)]">{offer.caveats.join(" · ")}</p>
       )}
+
+      {customs.overLimit ? (
+        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs leading-5 text-amber-800">
+          <p className="font-semibold">⚠ Imposto de importação estimado</p>
+          <p className="mt-0.5">
+            Produto acima do limite de US$ 1.000 isento. Excedente:{" "}
+            <span className="font-medium">US$ {(customs.priceUSD - 1000).toFixed(0)}</span>.
+            Imposto estimado (50% sobre o excesso):{" "}
+            <span className="font-medium">{money.format(customs.dutyBRL)}</span>.
+          </p>
+        </div>
+      ) : (
+        <p className="mt-2 text-[11px] text-[var(--ink-subtle)]">
+          Dentro do limite de isenção de US$ 1.000 na entrada no Brasil.
+        </p>
+      )}
+
       {offer.sources.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5" onClick={(e) => e.stopPropagation()}>
           {offer.sources.map((s) => (
@@ -533,16 +572,19 @@ function AgentLogs({ steps, summary, warnings }: {
   );
 }
 
-function Scorecard({ brazilPrice, productPriceBRL, tripSpendBRL, savingsBRL, recommendation, warnings }: {
+function Scorecard({ brazilPrice, productPriceBRL, tripSpendBRL, savingsBRL, recommendation, warnings, selectedOffer, usdToBrl }: {
   brazilPrice: number | null;
   productPriceBRL: number;
   tripSpendBRL: number;
   savingsBRL: number;
   recommendation: string;
   warnings: string[];
+  selectedOffer?: OverseasMarketOffer | null;
+  usdToBrl: number;
 }) {
   const [warningsOpen, setWarningsOpen] = useState(false);
   const positive = savingsBRL >= 0;
+  const customs = selectedOffer ? calcCustomsDuty(selectedOffer.priceLocal, selectedOffer.priceCurrency, usdToBrl) : null;
 
   return (
     <div className="result-panel mt-2">
@@ -612,6 +654,22 @@ function Scorecard({ brazilPrice, productPriceBRL, tripSpendBRL, savingsBRL, rec
           </p>
         </div>
       </div>
+
+      {customs?.overLimit && (
+        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs leading-5 text-amber-800">
+          <p className="font-semibold">⚠ Imposto de importação estimado</p>
+          <p className="mt-0.5">
+            O produto ({selectedOffer!.priceLocalDisplay}) ultrapassa o limite de isenção de US$ 1.000.
+            Imposto estimado: <span className="font-semibold">{money.format(customs.dutyBRL)}</span>{" "}
+            (50% sobre US$ {(customs.priceUSD - 1000).toFixed(0)} de excedente) — já incluído no total da viagem acima.
+          </p>
+        </div>
+      )}
+      {customs && !customs.overLimit && (
+        <p className="mt-2.5 text-[11px] text-[var(--ink-subtle)]">
+          ✓ Produto dentro do limite de isenção de US$ 1.000 na entrada no Brasil — sem imposto de importação.
+        </p>
+      )}
     </div>
   );
 }
@@ -636,6 +694,7 @@ export function DealWorkflow() {
   const [selectedTicketId, setSelectedTicketId] = useState("");
   const [selectedLodgingId, setSelectedLodgingId] = useState("");
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [usdToBrl, setUsdToBrl] = useState(5.7); // fallback; fetched on mount
   const [history, setHistory] = useState<HistoryEntry[]>(() => {
     if (typeof window === "undefined") return [];
     return loadHistory();
@@ -662,6 +721,13 @@ export function DealWorkflow() {
       offers[0] ?? null
     );
   }, [overseas.result, selectedOverseasOfferId]);
+
+  useEffect(() => {
+    fetch("/api/rates")
+      .then((r) => r.json())
+      .then((d) => { if (d?.usdToBrl) setUsdToBrl(d.usdToBrl); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const normalized = deferredQuery.trim();
@@ -947,8 +1013,12 @@ export function DealWorkflow() {
   // Recalculate totals whenever the user picks a different ticket or lodging
   const activeTripSpend = useMemo(() => {
     if (!tripResult || !activeTicket || !activeLodging) return tripResult?.estimatedTripSpendBRL ?? 0;
-    return tripResult.productPriceBRL + activeTicket.estimatedRoundTripBRL + activeLodging.estimatedTotalStayBRL;
-  }, [tripResult, activeTicket, activeLodging]);
+    const base = tripResult.productPriceBRL + activeTicket.estimatedRoundTripBRL + activeLodging.estimatedTotalStayBRL;
+    const duty = selectedOverseasOffer
+      ? calcCustomsDuty(selectedOverseasOffer.priceLocal, selectedOverseasOffer.priceCurrency, usdToBrl).dutyBRL
+      : 0;
+    return base + duty;
+  }, [tripResult, activeTicket, activeLodging, selectedOverseasOffer, usdToBrl]);
 
   const activeSavings = useMemo(() => {
     if (!tripResult) return 0;
@@ -1196,6 +1266,7 @@ export function DealWorkflow() {
                       brazilReferencePriceBRL={overseas.result!.brazilReferencePriceBRL}
                       selected={offer.id === selectedOverseasOfferId}
                       onSelect={() => setSelectedOverseasOfferId(offer.id)}
+                      usdToBrl={usdToBrl}
                     />
                   ))}
                 </div>
@@ -1367,6 +1438,8 @@ export function DealWorkflow() {
                       : "Com os custos atuais, a viagem parece mais cara do que comprar no Brasil, a menos que existam outros motivos para ir."
                   }
                   warnings={tripResult.warnings}
+                  selectedOffer={selectedOverseasOffer}
+                  usdToBrl={usdToBrl}
                 />
 
                 {/* Reset button */}
