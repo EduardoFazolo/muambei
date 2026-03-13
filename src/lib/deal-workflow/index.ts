@@ -631,6 +631,47 @@ function recalcOfferBRL(
   return offer;
 }
 
+function ensureUniqueId(baseId: string, seenCounts: Map<string, number>): string {
+  const trimmed = baseId.trim();
+  const count = seenCounts.get(trimmed) ?? 0;
+  seenCounts.set(trimmed, count + 1);
+  return count === 0 ? trimmed : `${trimmed}-${count + 1}`;
+}
+
+export function normalizeOverseasOffers(
+  offers: OverseasMarketOffer[],
+  recommendedOfferId: string,
+): {
+  offers: OverseasMarketOffer[];
+  recommendedOfferId: string;
+} {
+  const seenCounts = new Map<string, number>();
+  let nextRecommendedOfferId = recommendedOfferId;
+  let preferredMatched = false;
+
+  const normalizedOffers = offers.map((offer, index) => {
+    const fallbackId = `offer-${index + 1}`;
+    const rawId = offer.id.trim() || fallbackId;
+    const uniqueId = ensureUniqueId(rawId, seenCounts);
+
+    if (!preferredMatched && offer.id === recommendedOfferId) {
+      nextRecommendedOfferId = uniqueId;
+      preferredMatched = true;
+    }
+
+    return uniqueId === offer.id ? offer : { ...offer, id: uniqueId };
+  });
+
+  if (!normalizedOffers.some((offer) => offer.id === nextRecommendedOfferId)) {
+    nextRecommendedOfferId = normalizedOffers[0]?.id ?? recommendedOfferId;
+  }
+
+  return {
+    offers: normalizedOffers,
+    recommendedOfferId: nextRecommendedOfferId,
+  };
+}
+
 function exchangeRateForCurrency(
   currency: string | undefined,
   rates: { usdToBrl: number; eurToBrl: number; pygToBrl?: number },
@@ -844,6 +885,10 @@ export async function researchOverseasProduct(input: unknown) {
   const correctedOffers = result.offers.map((offer) =>
     recalcOfferBRL(offer, rates, normalized.brazilReferencePriceBRL),
   );
+  const normalizedOffers = normalizeOverseasOffers(
+    correctedOffers,
+    result.recommendedOfferId,
+  );
 
   return {
     generatedAt: new Date().toISOString(),
@@ -851,8 +896,8 @@ export async function researchOverseasProduct(input: unknown) {
     referenceProduct: normalized.referenceProduct,
     brazilReferencePriceBRL: normalized.brazilReferencePriceBRL,
     summary: result.summary,
-    recommendedOfferId: result.recommendedOfferId,
-    offers: correctedOffers,
+    recommendedOfferId: normalizedOffers.recommendedOfferId,
+    offers: normalizedOffers.offers,
     warnings: result.warnings,
   } satisfies OverseasResearchResponse;
 }

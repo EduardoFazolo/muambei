@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import {
   estimateDisplayPriceBRL,
   normalizeTicketResearch,
+  normalizeOverseasOffers,
 } from "./index";
 
 const rates = {
@@ -86,5 +87,60 @@ describe("normalizeTicketResearch", () => {
     );
     expect(normalized.bestTicketId).toBe("expensive");
     expect(normalized.warnings).toHaveLength(1);
+  });
+});
+
+describe("normalizeOverseasOffers", () => {
+  test("deduplicates repeated offer ids and remaps the recommended id", () => {
+    const normalized = normalizeOverseasOffers(
+      [
+        {
+          id: "turn0search4",
+          region: "united_states",
+          country: "United States",
+          city: "Miami",
+          airportHint: "MIA",
+          storeName: "Store A",
+          purchaseChannel: "online",
+          offerTitle: "Product A",
+          priceCurrency: "USD",
+          priceLocal: 499,
+          priceLocalDisplay: "US$499",
+          estimatedPriceBRL: 2645,
+          estimatedSavingsVsBrazilBRL: 500,
+          stockSignal: "in stock",
+          whyItWins: "",
+          caveats: [],
+          confidence: "high",
+          sources: [],
+        },
+        {
+          id: "turn0search4",
+          region: "europe",
+          country: "Portugal",
+          city: "Lisboa",
+          airportHint: "LIS",
+          storeName: "Store B",
+          purchaseChannel: "online",
+          offerTitle: "Product B",
+          priceCurrency: "EUR",
+          priceLocal: 480,
+          priceLocalDisplay: "€480",
+          estimatedPriceBRL: 2928,
+          estimatedSavingsVsBrazilBRL: 217,
+          stockSignal: "limited",
+          whyItWins: "",
+          caveats: [],
+          confidence: "medium",
+          sources: [],
+        },
+      ],
+      "turn0search4",
+    );
+
+    expect(normalized.offers[0]?.id).toBe("turn0search4");
+    expect(normalized.offers[1]?.id).toBe("turn0search4-2");
+    expect(new Set(normalized.offers.map((offer) => offer.id)).size).toBe(2);
+    expect(normalized.recommendedOfferId).toBe("turn0search4");
   });
 });
