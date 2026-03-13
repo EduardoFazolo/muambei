@@ -487,6 +487,8 @@ function ticketPrompt(
     "This is a COST-OPTIMIZATION shopping trip. The traveler's only goal is to buy a product cheaply and return home.",
     "CRITICAL: Set bestTicketId to the option with the LOWEST estimatedRoundTripBRL that has reasonable reliability.",
     "Do NOT pick a premium or convenient window as best — cheapest viable ticket wins.",
+    "FARE CLASS RULE: use economy or basic economy only. Exclude premium economy, business, first class, refundable flex bundles, points fares, and package prices.",
+    "PASSENGER RULE: estimatedRoundTripBRL must reflect the total cash airfare for the traveler count in the input, but the source fare itself should still be the cheapest bookable economy fare you can verify.",
     `EXCHANGE RATE CONVERSION — estimatedRoundTripBRL must be the total round-trip cost in BRL:`,
     `  Real-time rates (fetched at ${rates.fetchedAt}):`,
     `    1 USD = ${rates.usdToBrl.toFixed(4)} BRL`,
@@ -614,13 +616,7 @@ function recalcOfferBRL(
   rates: { usdToBrl: number; eurToBrl: number; pygToBrl: number },
   brazilReferencePriceBRL: number,
 ): OverseasMarketOffer {
-  const currency = offer.priceCurrency?.toUpperCase();
-  let rate: number | null = null;
-
-  if (currency === "USD" || currency === "US$" || currency === "US") rate = rates.usdToBrl;
-  else if (currency === "EUR" || currency === "€") rate = rates.eurToBrl;
-  else if (currency === "PYG" || currency === "GS" || currency === "GS.") rate = rates.pygToBrl;
-  else if (currency === "BRL" || currency === "R$") rate = 1;
+  const rate = exchangeRateForCurrency(offer.priceCurrency, rates);
 
   if (rate !== null && offer.priceLocal > 0) {
     const estimatedPriceBRL = Math.round(offer.priceLocal * rate);
@@ -633,6 +629,176 @@ function recalcOfferBRL(
 
   // Unknown currency — keep AI value but flag it
   return offer;
+}
+
+function exchangeRateForCurrency(
+  currency: string | undefined,
+  rates: { usdToBrl: number; eurToBrl: number; pygToBrl?: number },
+): number | null {
+  const normalized = currency?.trim().toUpperCase();
+  if (!normalized) return null;
+
+  if (normalized === "USD" || normalized === "US$" || normalized === "US") {
+    return rates.usdToBrl;
+  }
+  if (normalized === "EUR" || normalized === "€") {
+    return rates.eurToBrl;
+  }
+  if (normalized === "PYG" || normalized === "GS" || normalized === "GS.") {
+    return rates.pygToBrl ?? null;
+  }
+  if (normalized === "BRL" || normalized === "R$") {
+    return 1;
+  }
+
+  return null;
+}
+
+function parseLocalizedMoneyAmount(raw: string): number | null {
+  let normalized = raw.trim().replace(/\s+/g, "");
+  if (!normalized) return null;
+
+  const hasComma = normalized.includes(",");
+  const hasDot = normalized.includes(".");
+
+  if (hasComma && hasDot) {
+    if (normalized.lastIndexOf(",") > normalized.lastIndexOf(".")) {
+      normalized = normalized.replace(/\./g, "").replace(",", ".");
+    } else {
+      normalized = normalized.replace(/,/g, "");
+    }
+  } else if (hasComma) {
+    const parts = normalized.split(",");
+    normalized =
+      parts.length === 2 && parts[1].length <= 2
+        ? `${parts[0].replace(/,/g, "")}.${parts[1]}`
+        : normalized.replace(/,/g, "");
+  } else if (hasDot) {
+    const parts = normalized.split(".");
+    normalized =
+      parts.length === 2 && parts[1].length <= 2
+        ? `${parts[0].replace(/\./g, "")}.${parts[1]}`
+        : normalized.replace(/\./g, "");
+  }
+
+  const value = Number.parseFloat(normalized);
+  return Number.isFinite(value) && value > 0 ? value : null;
+}
+
+type ParsedDisplayMoney = {
+  currency: string;
+  amount: number;
+};
+
+function extractDisplayMoney(displayPrice: string): ParsedDisplayMoney[] {
+  const pattern = /(R\$|US\$|USD|EUR|€)\s*([\d.,]+)/gi;
+  const matches: ParsedDisplayMoney[] = [];
+
+  for (const match of displayPrice.matchAll(pattern)) {
+    const amount = parseLocalizedMoneyAmount(match[2] ?? "");
+    if (!amount) continue;
+    matches.push({
+      currency: match[1] ?? "",
+      amount,
+    });
+  }
+
+  return matches;
+}
+
+export function estimateDisplayPriceBRL(
+  displayPrice: string,
+  rates: { usdToBrl: number; eurToBrl: number; pygToBrl?: number },
+): number | null {
+  const normalizedDisplay = displayPrice.trim();
+  if (!normalizedDisplay) return null;
+
+  const moneyParts = extractDisplayMoney(normalizedDisplay);
+  if (moneyParts.length === 0) return null;
+
+  const looksLikeRange =
+    moneyParts.length > 1 &&
+    !/[+]/.test(normalizedDisplay) &&
+    /(?:\ba\b|[-–])/i.test(normalizedDisplay);
+  if (looksLikeRange) return null;
+
+  const converted = moneyParts.map((part) => {
+    const rate = exchangeRateForCurrency(part.currency, rates);
+    return rate === null ? null : part.amount * rate;
+  });
+
+  if (converted.some((value) => value === null)) return null;
+
+  let total = 0;
+  if (converted.length === 1) {
+    total = converted[0] ?? 0;
+    const isPerLeg =
+      /(?:\/\s*trecho|por trecho|one-way|per leg|cada trecho)/i.test(
+        normalizedDisplay,
+      ) && !/ida\s*e\s*volta/i.test(normalizedDisplay);
+    const explicitRoundTripMultiplier = /(?:x|×)\s*2|2\s*(?:x|×)/i.test(
+      normalizedDisplay,
+    );
+    if (isPerLeg && explicitRoundTripMultiplier) {
+      total *= 2;
+    }
+  } else if (/[+]/.test(normalizedDisplay)) {
+    total = converted.reduce<number>(
+      (sum, value) => sum + (value ?? 0),
+      0,
+    );
+  } else {
+    return null;
+  }
+
+  return total > 0 ? Math.round(total) : null;
+}
+
+export function normalizeTicketResearch(
+  tickets: TicketResearchModel,
+  rates: { usdToBrl: number; eurToBrl: number; fetchedAt: string },
+): TicketResearchModel {
+  let correctedCount = 0;
+
+  const ticketOptions = tickets.ticketOptions.map((ticket) => {
+    const estimatedFromDisplay = estimateDisplayPriceBRL(ticket.displayPrice, rates);
+    if (estimatedFromDisplay === null || estimatedFromDisplay <= 0) {
+      return ticket;
+    }
+
+    if (estimatedFromDisplay !== ticket.estimatedRoundTripBRL) {
+      correctedCount += 1;
+    }
+
+    return {
+      ...ticket,
+      estimatedRoundTripBRL: estimatedFromDisplay,
+    };
+  });
+
+  const rankedCandidates =
+    ticketOptions.filter((ticket) => ticket.confidence !== "low").length > 0
+      ? ticketOptions.filter((ticket) => ticket.confidence !== "low")
+      : ticketOptions;
+  const bestTicket =
+    [...rankedCandidates].sort(
+      (a, b) => a.estimatedRoundTripBRL - b.estimatedRoundTripBRL,
+    )[0] ?? ticketOptions[0];
+
+  const warnings =
+    correctedCount > 0
+      ? [
+          ...tickets.warnings,
+          `${correctedCount} tarifa(s) foram normalizadas para alinhar o valor em BRL ao preço exibido nas fontes.`,
+        ]
+      : tickets.warnings;
+
+  return {
+    ...tickets,
+    bestTicketId: bestTicket?.id ?? tickets.bestTicketId,
+    ticketOptions,
+    warnings,
+  };
 }
 
 function transferPrompt(origin: string): string {
@@ -697,13 +863,14 @@ export async function researchTicketWindows(
   paraguayTransfer?: ParaguayTransferResult,
 ) {
   const normalized = normalizeTripInput(input);
-  const tickets = await requestStructuredResearch<TicketResearchModel>({
+  const rawTickets = await requestStructuredResearch<TicketResearchModel>({
     schemaName: "shopping_trip_ticket_research",
     schema: TICKET_RESEARCH_SCHEMA,
     instructions:
       "You are a rigorous travel analyst. Use live web search, favor current sources, and return only the requested JSON schema.",
     input: ticketPrompt(normalized, rates, paraguayTransfer),
   });
+  const tickets = normalizeTicketResearch(rawTickets, rates);
 
   return {
     input: normalized,
