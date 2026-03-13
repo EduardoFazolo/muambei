@@ -27,6 +27,9 @@ export const metadata: Metadata = {
   title: "Muambei | Produto, exterior e viagem no mesmo fluxo",
   description:
     "Pesquise o produto no Brasil, compare precos fora do pais e so depois rode o workflow completo de viagem.",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({

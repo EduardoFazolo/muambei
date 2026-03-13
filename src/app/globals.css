@@ -5,40 +5,40 @@
   --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
   --font-mono: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
-  /* ── Terracotta / Vermilion — warm premium accent ── */
-  --brand-50:  #FFF5F2;
-  --brand-100: #FFE7DE;
-  --brand-200: #FFCFC1;
-  --brand-300: #FFAD94;
-  --brand-400: #FF825E;
-  --brand-500: #FF5324;
-  --brand-600: #E6350B;
-  --brand-700: #C22304;
-  --brand-800: #9E1C06;
-  --brand-900: #821A0A;
+  /* ── Ocean Blue / Cyan — cool modern brand from logo ── */
+  --brand-50:  #F0F9FF;
+  --brand-100: #E0F2FE;
+  --brand-200: #BAE6FD;
+  --brand-300: #7DD3FC;
+  --brand-400: #38BDF8;
+  --brand-500: #0EA5E9;
+  --brand-600: #0284C7; /* Main Ocean Blue */
+  --brand-700: #0369A1;
+  --brand-800: #075985;
+  --brand-900: #0C4A6E; /* Deep Navy */
 
-  /* ── Ink — Warm Stone ── */
-  --ink-0:      #1C1917;
-  --ink-muted:  #78716C;
-  --ink-subtle: #A8A29E;
+  /* ── Ink — Cool Slate ── */
+  --ink-0:      #0F172A;
+  --ink-muted:  #475569;
+  --ink-subtle: #94A3B8;
 
-  /* ── Surfaces & Backgrounds ── */
-  --surface-0: #FAF9F8; /* Warm light gray background */
+  /* ── Surfaces & Backgrounds (Cooler tones) ── */
+  --surface-0: #F8FAFC; /* Cool light gray/blue background */
   --surface-1: #FFFFFF; /* Pure white layer */
-  --surface-2: #F5F4F2; /* Grouped secondary background */
-  --surface-3: #E7E5E4; /* Separator light */
+  --surface-2: #F1F5F9; /* Grouped secondary background */
+  --surface-3: #E2E8F0; /* Separator light */
 
   /* ── Borders (mostly transparent to rely on shadows) ── */
-  --line:       #E5E5EA;
-  --line-strong:#C7C7CC;
+  --line:       #CBD5E1;
+  --line-strong:#94A3B8;
 
   /* ── Semantic states ── */
-  --good:       #34C759;
-  --good-soft:  #E8F8EE;
-  --active:     #007AFF;
-  --active-soft:#E5F0FF;
-  --bad:        #FF3B30;
-  --bad-soft:   #FFEBEA;
+  --good:       #10B981;
+  --good-soft:  #D1FAE5;
+  --active:     #0284C7;
+  --active-soft:#E0F2FE;
+  --bad:        #EF4444;
+  --bad-soft:   #FEE2E2;
 }
 
 @theme inline {
@@ -127,7 +127,7 @@ button:disabled { cursor: not-allowed; }
   transition: all 400ms cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-.step-num-active { background: var(--brand-600); color: #fff; box-shadow: 0 4px 12px rgba(230, 53, 11, 0.3); }
+.step-num-active { background: var(--brand-600); color: #fff; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3); }
 .step-num-done   { background: var(--good); color: #fff; }
 .step-num-idle   { background: var(--surface-2); color: var(--ink-subtle); border: 1px solid transparent; }
 
@@ -189,7 +189,7 @@ button:disabled { cursor: not-allowed; }
 .offer-card-selected:hover {
   border-color: transparent !important;
   background: var(--brand-50);
-  box-shadow: 0 0 0 2px var(--brand-500) inset, 0 12px 32px rgba(230, 53, 11, 0.12);
+  box-shadow: 0 0 0 2px var(--brand-500) inset, 0 12px 32px rgba(2, 132, 199, 0.12);
   transform: translateY(-2px);
 }
 
@@ -259,13 +259,13 @@ button:disabled { cursor: not-allowed; }
   background: var(--brand-600);
   color: #FFFFFF;
   font-weight: 600;
-  box-shadow: 0 4px 16px rgba(230, 53, 11, 0.25);
+  box-shadow: 0 4px 16px rgba(2, 132, 199, 0.25);
 }
 
 .action-pill-primary:hover {
   background: var(--brand-500);
   color: #fff;
-  box-shadow: 0 6px 20px rgba(230, 53, 11, 0.35);
+  box-shadow: 0 6px 20px rgba(2, 132, 199, 0.35);
   transform: translateY(-2px);
 }
 
@@ -368,19 +368,19 @@ button:disabled { cursor: not-allowed; }
   font-weight: 600;
   cursor: pointer;
   border: none;
-  box-shadow: 0 8px 24px rgba(230, 53, 11, 0.3);
+  box-shadow: 0 8px 24px rgba(2, 132, 199, 0.3);
   transition: all 300ms cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .step-cta-action:hover {
   background: var(--brand-500);
-  box-shadow: 0 12px 32px rgba(230, 53, 11, 0.4);
+  box-shadow: 0 12px 32px rgba(2, 132, 199, 0.4);
   transform: translateY(-2px);
 }
 
 .step-cta-action:active {
   transform: translateY(0) scale(0.98);
-  box-shadow: 0 4px 12px rgba(230, 53, 11, 0.2);
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2);
 }
 
 .step-cta-action:disabled {
