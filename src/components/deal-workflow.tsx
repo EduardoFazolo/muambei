@@ -639,7 +639,7 @@ function Scorecard({ brazilPrice, productPriceBRL, tripSpendBRL, savingsBRL, rec
         </div>
 
         {/* Viagem total — prominent */}
-        <div className="rounded-2xl bg-[var(--surface-1)] p-4 relative overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.06),0_2px_8px_rgba(41,93,250,0.04)]">
+        <div className="rounded-2xl bg-[var(--surface-1)] p-4 relative overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.06),0_2px_8px_rgba(230,53,11,0.04)]">
           <div className="absolute top-0 inset-x-0 h-1.5 bg-[var(--brand-500)]"></div>
           <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--brand-600)]">Viagem completa</p>
           <p className="mt-2 font-display text-2xl text-[var(--ink-0)]">{money.format(tripSpendBRL)}</p>
