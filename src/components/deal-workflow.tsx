@@ -1207,12 +1207,12 @@ export function DealWorkflow() {
             {currentStep === 1 && (
               <motion.div key="step1" custom={direction} variants={stepVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.35, ease: [0.2, 0.8, 0.2, 1] }} className="w-full">
                 <section className="step-panel">
-                  <div className="mb-5 flex flex-wrap items-center gap-y-2 gap-x-3">
+                  <div className="mb-5 flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-2">
                     <StepBadge n={1} status={stepDone(1) ? "done" : "active"} />
-                    <h2 className="font-display text-2xl sm:text-[1.75rem] font-semibold tracking-tight text-[var(--ink-0)] whitespace-nowrap">Busca no Brasil</h2>
+                    <h2 className="font-display text-2xl font-semibold tracking-tight text-[var(--ink-0)] sm:text-[1.75rem]">Busca no Brasil</h2>
                     <AnimatePresence>
                       {search.status === "loading" && (
-                        <motion.span initial={{ opacity: 0, scale: 0.9, x: 10 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, scale: 0.9, x: 10 }} transition={{ duration: 0.3, ease: [0.2, 0.8, 0.2, 1] }} className="ml-auto status-pill tone-active shrink-0">Buscando…</motion.span>
+                        <motion.span initial={{ opacity: 0, scale: 0.9, x: 10 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, scale: 0.9, x: 10 }} transition={{ duration: 0.3, ease: [0.2, 0.8, 0.2, 1] }} className="status-pill shrink-0 tone-active sm:ml-auto">Buscando…</motion.span>
                       )}
                     </AnimatePresence>
                   </div>
@@ -1296,7 +1296,7 @@ export function DealWorkflow() {
                   </div>
                 ) :null}
                 
-                <div className="flex items-center justify-end gap-3 w-full sm:w-auto">
+                <div className="flex w-full flex-wrap items-center justify-end gap-3 sm:w-auto sm:flex-nowrap">
                   <HistoryButton count={history.length} muted={waitingForBrazilSelection} onClick={() => setHistoryOpen(true)} />
                   
                   {hasSearchResults && selectedBrazilOffer && (
@@ -1410,7 +1410,7 @@ export function DealWorkflow() {
                         </span>
                       </div>
                       
-                      <div className="flex items-center justify-end gap-3 w-full sm:w-auto">
+                      <div className="flex w-full flex-wrap items-center justify-end gap-3 sm:w-auto sm:flex-nowrap">
                         <HistoryButton count={history.length} onClick={() => setHistoryOpen(true)} />
                         
                         <button
@@ -1434,12 +1434,12 @@ export function DealWorkflow() {
             {currentStep === 3 && (
               <motion.div key="step3" custom={direction} variants={stepVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.35, ease: [0.2, 0.8, 0.2, 1] }} className="w-full">
                 <section className="step-panel">
-                  <div className="mb-5 flex flex-wrap items-center gap-y-2 gap-x-3">
+                  <div className="mb-5 flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-2">
                     <StepBadge n={3} status={stepDone(3) ? "done" : "active"} />
-                    <h2 className="font-display text-2xl sm:text-[1.75rem] font-semibold tracking-tight text-[var(--ink-0)] whitespace-nowrap">Planejar a Viagem</h2>
+                    <h2 className="font-display text-2xl font-semibold tracking-tight text-[var(--ink-0)] sm:text-[1.75rem]">Planejar a Viagem</h2>
                     <AnimatePresence>
                       {trip.status === "running" && (
-                        <motion.span initial={{ opacity: 0, scale: 0.9, x: 10 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, scale: 0.9, x: 10 }} transition={{ duration: 0.3, ease: [0.2, 0.8, 0.2, 1] }} className="ml-auto status-pill tone-active shrink-0">Calculando…</motion.span>
+                        <motion.span initial={{ opacity: 0, scale: 0.9, x: 10 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, scale: 0.9, x: 10 }} transition={{ duration: 0.3, ease: [0.2, 0.8, 0.2, 1] }} className="status-pill shrink-0 tone-active sm:ml-auto">Calculando…</motion.span>
                       )}
                     </AnimatePresence>
                   </div>
@@ -1606,7 +1606,7 @@ export function DealWorkflow() {
                 <AgentLogs steps={trip.steps} />
 
                 <div className="step-cta">
-                  <div className="flex items-center justify-center sm:justify-end gap-3 w-full">
+                  <div className="flex w-full flex-wrap items-center justify-center gap-3 sm:justify-end sm:flex-nowrap">
                     <HistoryButton count={history.length} onClick={() => setHistoryOpen(true)} />
                     
                     <button type="button" onClick={resetAll} className="step-cta-action py-2.5">
@@ -1614,6 +1614,8 @@ export function DealWorkflow() {
                     </button>
                   </div>
                 </div>
+                </>
+              )}
                 </section>
               </motion.div>
             )}
