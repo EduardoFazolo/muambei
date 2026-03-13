@@ -705,13 +705,13 @@ function Scorecard({ brazilPrice, productPriceBRL, tripSpendBRL, savingsBRL, rec
 
   return (
     <div className="result-panel mt-2">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="kicker text-[var(--brand-600)]">Conta final</p>
         {warnings.length > 0 && (
           <button
             type="button"
             onClick={() => setWarningsOpen((v) => !v)}
-            className="flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface-3)] px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-[var(--ink-muted)] hover:border-[var(--brand-300)] hover:text-[var(--brand-700)]"
+            className="flex w-full items-center justify-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface-3)] px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-[var(--ink-muted)] hover:border-[var(--brand-300)] hover:text-[var(--brand-700)] sm:w-auto"
           >
             ⚠ {warnings.length} avisos {warningsOpen ? "▲" : "▼"}
           </button>
@@ -734,30 +734,30 @@ function Scorecard({ brazilPrice, productPriceBRL, tripSpendBRL, savingsBRL, rec
           <p className={`text-[10px] font-mono uppercase tracking-wider ${positive ? "text-[var(--good)]" : "text-[var(--bad)]"}`}>
             {positive ? "Você economiza" : "Você paga a mais"}
           </p>
-          <p className={`mt-1.5 font-bold text-[2.5rem] leading-none tracking-tight ${positive ? "text-[var(--good)]" : "text-[var(--bad)]"}`}>
+          <p className={`mt-1.5 break-words font-bold text-[2.2rem] leading-none tracking-tight sm:text-[2.5rem] ${positive ? "text-[var(--good)]" : "text-[var(--bad)]"}`}>
             {money.format(Math.abs(savingsBRL))}
           </p>
           <p className={`mt-1 text-[10px] ${positive ? "text-[var(--good)]" : "text-[var(--bad)]"}`}>vs. comprar no Brasil</p>
         </div>
 
         {/* Comparison row */}
-        <div className="grid grid-cols-2 gap-2.5">
-          <div className="rounded-2xl bg-[var(--surface-2)] p-4 shadow-sm">
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+          <div className="min-w-0 rounded-2xl bg-[var(--surface-2)] p-4 shadow-sm">
             <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">No Brasil</p>
-            <p className="mt-2 font-display text-xl text-[var(--ink-0)]">
+            <p className="mt-2 break-words font-display text-xl leading-tight text-[var(--ink-0)]">
               {brazilPrice !== null ? money.format(brazilPrice) : "—"}
             </p>
           </div>
-          <div className="rounded-2xl bg-[var(--surface-1)] p-4 relative overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.06),0_2px_8px_rgba(230,53,11,0.04)]">
+          <div className="relative min-w-0 overflow-hidden rounded-2xl bg-[var(--surface-1)] p-4 shadow-[0_8px_32px_rgba(0,0,0,0.06),0_2px_8px_rgba(230,53,11,0.04)]">
             <div className="absolute top-0 inset-x-0 h-1.5 bg-[var(--brand-500)]" />
             <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--brand-600)]">Viagem completa</p>
-            <p className="mt-2 font-display text-xl text-[var(--ink-0)]">{money.format(tripSpendBRL)}</p>
-            <p className="mt-1 text-[10px] text-[var(--ink-subtle)]">produto + passagem + hotel</p>
+            <p className="mt-2 break-words font-display text-xl leading-tight text-[var(--ink-0)]">{money.format(tripSpendBRL)}</p>
+            <p className="mt-1 text-[10px] leading-4 text-[var(--ink-subtle)]">produto + passagem + hotel</p>
           </div>
         </div>
 
         {/* Produto fora — subtle footnote row */}
-        <div className="rounded-2xl bg-[var(--surface-2)] px-4 py-3 flex items-center justify-between">
+        <div className="flex flex-col gap-1 rounded-2xl bg-[var(--surface-2)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">Produto fora</p>
           <p className="text-sm font-semibold text-[var(--ink-0)]">{money.format(productPriceBRL)}</p>
         </div>
