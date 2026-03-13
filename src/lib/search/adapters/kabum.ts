@@ -53,7 +53,7 @@ export const kabumAdapter: StoreAdapter = {
       const offers =
         payload.catalogServer?.data?.map((item) => {
           const price = item.priceWithDiscount ?? item.price;
-          if (!item.name || !price) {
+          if (!item.name || !price || item.available === false) {
             return null;
           }
 

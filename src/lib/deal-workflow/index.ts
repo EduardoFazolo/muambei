@@ -1,9 +1,11 @@
 import { fetchExchangeRates } from "@/lib/exchange-rates";
+import { normalizeDateToISO } from "@/lib/deal-workflow/lodging-retry";
 import {
   requestStructuredResearch,
   TripResearchError,
 } from "@/lib/trip-research/openai";
 import type {
+  LodgingResearchModel,
   LodgingResearchOption,
   OverseasMarketOffer,
   OverseasResearchResponse,
@@ -23,6 +25,49 @@ const SOURCE_SCHEMA = {
     note: { type: "string" },
   },
 } as const;
+
+const TRANSFER_RESEARCH_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["summary", "options"],
+  properties: {
+    summary: { type: "string" },
+    options: {
+      type: "array",
+      minItems: 2,
+      maxItems: 5,
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["id", "mode", "description", "estimatedCostOnewayBRL", "sources"],
+        properties: {
+          id: { type: "string" },
+          mode: { type: "string" },
+          description: { type: "string" },
+          estimatedCostOnewayBRL: { type: "number" },
+          sources: {
+            type: "array",
+            minItems: 1,
+            items: SOURCE_SCHEMA,
+          },
+        },
+      },
+    },
+  },
+} as const;
+
+export type ParaguayTransferOption = {
+  id: string;
+  mode: string;
+  description: string;
+  estimatedCostOnewayBRL: number;
+  sources: Array<{ label: string; url: string; note: string }>;
+};
+
+export type ParaguayTransferResult = {
+  summary: string;
+  options: ParaguayTransferOption[];
+};
 
 const DATE_WINDOW_SCHEMA = {
   type: "object",
@@ -255,13 +300,6 @@ type TicketResearchModel = {
   warnings: string[];
 };
 
-type LodgingResearchModel = {
-  summary: string;
-  bestLodgingId: string;
-  lodgingOptions: LodgingResearchOption[];
-  warnings: string[];
-};
-
 function cleanText(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -353,7 +391,7 @@ function normalizeTripInput(input: unknown): TripWorkflowInput {
 
 function overseasPrompt(
   input: OverseasWorkflowInput,
-  rates: { usdToBrl: number; eurToBrl: number; fetchedAt: string },
+  rates: { usdToBrl: number; eurToBrl: number; pygToBrl: number; fetchedAt: string },
 ) {
   return [
     `Today's date is ${new Date().toISOString().slice(0, 10)}.`,
@@ -361,11 +399,12 @@ function overseasPrompt(
     "The buyer is based in Brazil and is comparing Brazil pricing to realistic purchase opportunities in the United States, Europe, and Paraguay.",
     "Return only offers that look plausibly buyable by a traveler, with concrete retailer or marketplace sources.",
     "Favor direct product pages or strong commerce sources.",
-    "PARAGUAY CONTEXT: Ciudad del Este is the main electronics hub in Paraguay. Products sold there are often 30-50% cheaper than Brazil due to very low import taxes (Paraguay has some of the lowest in South America). Include at least one Paraguay option when the product is likely available there (electronics, tech, perfumes, alcohol, cigarettes). For Paraguay offers, use region='paraguay', city='Ciudad del Este', airportHint='FOZ (Foz do Iguaçu, BR) — cruzar a Ponte da Amizade'. Note that travelers bring goods across the border informally and Brazilian customs allows R$500 duty-free per person (or up to R$1.000 with 50% flat tax on the excess).",
+    "PARAGUAY CONTEXT: Ciudad del Este is the main electronics hub in Paraguay. Electronics stores there quote prices in USD — ALWAYS use USD prices for Paraguay offers, never Guaraníes (PYG). Products are often 30-50% cheaper than Brazil due to very low import taxes. Include at least one Paraguay option for electronics/tech. For Paraguay offers: region='paraguay', city='Ciudad del Este', airportHint='FOZ (Foz do Iguaçu, BR) — cruzar a Ponte da Amizade'. Note: Brazilian customs allows R$500 duty-free per person (50% flat tax on excess). Use reputable CDE stores like Importados JL, Global Electronics CDE, or similar — avoid 'Shopping China' or marketplace aggregators with unreliable stock.",
     `IMPORTANT: Use ONLY the real-time exchange rates provided below to convert prices to BRL. Do NOT use your own estimated rates.`,
     `Real-time exchange rates (fetched at ${rates.fetchedAt}):`,
     `  USD → BRL: ${rates.usdToBrl.toFixed(4)}`,
     `  EUR → BRL: ${rates.eurToBrl.toFixed(4)}`,
+    `  PYG → BRL: ${rates.pygToBrl.toFixed(6)} (only if price is unavoidably in Guaraníes)`,
     "Compute estimatedPriceBRL = priceLocal * exchange_rate. Show the calculation is honest and uses these exact rates.",
     "Use the Brazil reference price to estimate savings for every overseas offer.",
     "If an offer is in Europe, include the city or airport area a traveler would likely target.",
@@ -376,10 +415,72 @@ function overseasPrompt(
   ].join("\n");
 }
 
+function ticketPromptParaguay(
+  input: TripWorkflowInput,
+  transfer: ParaguayTransferResult,
+): string {
+  const hasTransferOptions = transfer.options.length > 0;
+  const transferSection = hasTransferOptions
+    ? [
+        "PONTE DA AMIZADE CROSSING — researched options (prefer these URLs for sources):",
+        ...transfer.options.map(
+          (t) =>
+            `  - ${t.mode}: ${t.description} — R$${t.estimatedCostOnewayBRL} one-way. Source: ${t.sources[0]?.url ?? "n/a"}`,
+        ),
+      ]
+    : [
+        "PONTE DA AMIZADE CROSSING — no pre-researched options available; use these known facts:",
+        "  - Uber operates in Foz do Iguaçu (uber.com). A trip to the Ponte da Amizade costs ~R$20–40 one-way.",
+        "  - Radio Taxi Foz: ~R$30–50 one-way to the Ponte da Amizade.",
+        "  - City bus (linha CDE): departs from Terminal Urbano de Foz, costs ~R$6 one-way.",
+      ];
+
+  return [
+    `Today's date is ${new Date().toISOString().slice(0, 10)}.`,
+    "Research current Brazilian transport options to Ciudad del Este, Paraguay with live web search.",
+    "This is a COST-OPTIMIZATION shopping trip. The traveler's only goal is to cross to Ciudad del Este, buy a product, and return home.",
+    "CRITICAL: Set bestTicketId to the option with the LOWEST estimatedRoundTripBRL that has reasonable reliability.",
+    "",
+    "DESTINATION CONTEXT — Ciudad del Este has NO direct flights from Brazil.",
+    "EVERY option MUST include two legs:",
+    "  LEG 1 — get to Foz do Iguaçu (bus, flight, or car from origin city)",
+    "  LEG 2 — cross Ponte da Amizade to Ciudad del Este (taxi, Uber, or city bus)",
+    "Propose 3 concrete options:",
+    "  1. ÔNIBUS + TRAVESSIA: overnight bus to Foz (Pluma/Catarinense/JBL via clickbus.com.br or busbuster.com) + Ponte da Amizade crossing",
+    "  2. VOO + TRAVESSIA: flight GRU→IGU (LATAM/Azul/GOL via google.com/flights) + Ponte da Amizade crossing",
+    "  3. CARRO PRÓPRIO + TRAVESSIA: drive to Foz + Ponte da Amizade crossing",
+    "",
+    ...transferSection,
+    "",
+    "RULES FOR PRICES:",
+    "  - estimatedRoundTripBRL = LEG1 round-trip + LEG2 round-trip, all in BRL.",
+    "  - All prices are BRL — do NOT convert or multiply.",
+    "  - CRITICAL: estimatedRoundTripBRL is a plain JSON integer. Write 1200, NOT 1.200 or 'R$1.200'.",
+    "  - SANITY CHECK: bus São Paulo→Foz round-trip ≈ R$300–700; flight ≈ R$600–1500; crossing ≈ R$12–100 round-trip. Total should be R$312–R$1600. If below 200, fix it.",
+    "  - displayPrice must describe both legs, e.g.: 'R$450 ônibus + R$80 travessia (ida e volta)'",
+    "  - Include at least one real source URL per leg (bus/airline for LEG1, crossing service for LEG2).",
+    "",
+    `Origin: ${input.origin}`,
+    `Destination: Ciudad del Este, Paraguay (via Foz do Iguaçu / Ponte da Amizade)`,
+    `Travelers: ${input.travelers}`,
+    `Trip length: ${input.tripLengthNights} nights`,
+    `Selected store: ${input.selectedOffer.storeName}`,
+    `Priorities: ${input.priorities ?? "menor custo total de transporte com confiabilidade razoável"}`,
+  ].join("\n");
+}
+
 function ticketPrompt(
   input: TripWorkflowInput,
   rates: { usdToBrl: number; eurToBrl: number; fetchedAt: string },
-) {
+  paraguayTransfer?: ParaguayTransferResult,
+): string {
+  if (input.selectedOffer.region === "paraguay") {
+    return ticketPromptParaguay(
+      input,
+      paraguayTransfer ?? { summary: "", options: [] },
+    );
+  }
+
   return [
     `Today's date is ${new Date().toISOString().slice(0, 10)}.`,
     "Research current public airfare information with live web search.",
@@ -423,11 +524,58 @@ function ticketPrompt(
   ].join("\n");
 }
 
+function lodgingPromptParaguay(
+  input: TripWorkflowInput,
+  featuredTicket: TicketResearchOption,
+): string {
+  const nights = featuredTicket.tripLengthNights;
+  const checkin = normalizeDateToISO(featuredTicket.departureWindow.start);
+  const checkout = normalizeDateToISO(featuredTicket.returnWindow.end);
+
+  // Pre-built search URLs the AI must use verbatim — prevents hallucinated property deep-links
+  const bookingFoz = `https://www.booking.com/searchresults.html?ss=Foz+do+Igua%C3%A7u%2C+Brazil&checkin=${checkin}&checkout=${checkout}&group_adults=1&no_rooms=1`;
+  const airbnbFoz = `https://www.airbnb.com.br/s/Foz-do-Igua%C3%A7u--Paran%C3%A1/homes`;
+  const bookingCde = `https://www.booking.com/searchresults.html?ss=Ciudad+del+Este%2C+Paraguay&checkin=${checkin}&checkout=${checkout}&group_adults=1&no_rooms=1`;
+
+  return [
+    `Today's date is ${new Date().toISOString().slice(0, 10)}.`,
+    `Research budget lodging for a ${nights}-night shopping trip base in Foz do Iguaçu, Brazil (or Ciudad del Este, PY).`,
+    "This is a COST-OPTIMIZATION trip. The traveler's only goal: sleep near the Ponte da Amizade, cross to CDE to buy a product, return home.",
+    "CRITICAL: bestLodgingId = the option with the LOWEST estimatedTotalStayBRL that is safe and near the Ponte da Amizade.",
+    "",
+    "LOCATION PRIORITY:",
+    "  1. Foz do Iguaçu (BR side) — pay in BRL, no currency risk, 10-15 min taxi to Ponte da Amizade. PREFERRED.",
+    "  2. Ciudad del Este (PY side) — USD prices, convert to BRL. Only include if clearly cheaper after conversion.",
+    "  Include at least 2 Foz do Iguaçu options and 1 CDE option.",
+    "",
+    "PRICING RULES:",
+    "  - Foz do Iguaçu hotels: prices are in BRL — use as-is.",
+    "  - CDE hotels: prices in USD — multiply by current rate (~5.7 BRL/USD) to get BRL.",
+    `  - estimatedTotalStayBRL = nightly rate × ${nights} nights, as a plain integer (write 420, not 420.00 or 'R$420').`,
+    "  - SANITY CHECK: budget hotel in Foz, 1-2 nights ≈ R$150–R$600 total.",
+    "",
+    "SOURCES — use ONLY these pre-built search URLs. Copy them exactly as shown. Do NOT invent property deep-links.",
+    `  Booking.com Foz do Iguaçu: ${bookingFoz}`,
+    `  Airbnb Foz do Iguaçu:      ${airbnbFoz}`,
+    `  Booking.com CDE:            ${bookingCde}`,
+    "  Use one of the above as the source for each option. No other URLs.",
+    "",
+    `Trip length: ${nights} nights`,
+    `Departure window: ${checkin} → ${checkout}`,
+    `Stay preference: ${input.stayPreference ?? "opção mais barata e segura perto da Ponte da Amizade"}`,
+    `Traveler priorities: ${input.priorities ?? "minimizar custo total da hospedagem"}`,
+  ].join("\n");
+}
+
 function lodgingPrompt(
   input: TripWorkflowInput,
   featuredTicket: TicketResearchOption,
   rates: { usdToBrl: number; eurToBrl: number; fetchedAt: string },
 ) {
+  if (input.selectedOffer.region === "paraguay") {
+    return lodgingPromptParaguay(input, featuredTicket);
+  }
+
   return [
     `Today's date is ${new Date().toISOString().slice(0, 10)}.`,
     "Research current public lodging information with live web search.",
@@ -444,7 +592,11 @@ function lodgingPrompt(
     `    • Price in EUR → multiply by ${rates.eurToBrl.toFixed(4)}`,
     `    • Price already in BRL → use as-is, no multiplication`,
     `  SANITY CHECK: estimatedTotalStayBRL for a multi-night stay should be at least R$300. If your result is below R$100, you made a conversion error — fix it.`,
-    "Use BRL estimates for the total stay. Every option must include at least one source URL.",
+    "  estimatedTotalStayBRL is a plain JSON integer (write 1200, NOT 1.200 or 'R$1.200').",
+    "SOURCES — use ONLY these pre-built search URLs. Copy them exactly. Do NOT invent property deep-links (they 404).",
+    `  Booking.com: https://www.booking.com/searchresults.html?ss=${encodeURIComponent(input.selectedOffer.city + ", " + input.selectedOffer.country)}&checkin=${normalizeDateToISO(featuredTicket.departureWindow.start)}&checkout=${normalizeDateToISO(featuredTicket.returnWindow.end)}&group_adults=1&no_rooms=1`,
+    `  Airbnb:      https://www.airbnb.com/s/${encodeURIComponent(input.selectedOffer.city)}/homes`,
+    "  Use one of the two above as the source for each lodging option. No other URLs.",
     "",
     `Destination city: ${input.selectedOffer.city}`,
     `Destination country: ${input.selectedOffer.country}`,
@@ -455,6 +607,59 @@ function lodgingPrompt(
     `Featured ticket estimated BRL: ${featuredTicket.estimatedRoundTripBRL.toFixed(2)}`,
     `Traveler priorities: ${input.priorities ?? "minimize total trip cost"}`,
   ].join("\n");
+}
+
+function recalcOfferBRL(
+  offer: OverseasMarketOffer,
+  rates: { usdToBrl: number; eurToBrl: number; pygToBrl: number },
+  brazilReferencePriceBRL: number,
+): OverseasMarketOffer {
+  const currency = offer.priceCurrency?.toUpperCase();
+  let rate: number | null = null;
+
+  if (currency === "USD" || currency === "US$" || currency === "US") rate = rates.usdToBrl;
+  else if (currency === "EUR" || currency === "€") rate = rates.eurToBrl;
+  else if (currency === "PYG" || currency === "GS" || currency === "GS.") rate = rates.pygToBrl;
+  else if (currency === "BRL" || currency === "R$") rate = 1;
+
+  if (rate !== null && offer.priceLocal > 0) {
+    const estimatedPriceBRL = Math.round(offer.priceLocal * rate);
+    return {
+      ...offer,
+      estimatedPriceBRL,
+      estimatedSavingsVsBrazilBRL: brazilReferencePriceBRL - estimatedPriceBRL,
+    };
+  }
+
+  // Unknown currency — keep AI value but flag it
+  return offer;
+}
+
+function transferPrompt(origin: string): string {
+  return [
+    `Today's date is ${new Date().toISOString().slice(0, 10)}.`,
+    "Research REAL, currently bookable transfer and crossing options from Foz do Iguaçu, Brazil to Ciudad del Este, Paraguay.",
+    "Focus on: taxis (Radio Taxi Foz, Ligue Táxi), ride-hailing apps (Uber availability in Foz do Iguaçu), shuttle/van services, and the city bus that crosses Ponte da Amizade.",
+    "Do NOT include options that require prior hotel booking or tour operators.",
+    "CRITICAL — sources must be REAL, WORKING URLs you are highly confident exist (official taxi/app pages, government info, or verified news). If you are not sure a URL works, use a well-known domain like uber.com or the official city bus info page.",
+    "estimatedCostOnewayBRL is ONE WAY cost in BRL — a plain integer (write 40, NOT 40.00 or 'R$40').",
+    "SANITY CHECK: a taxi or Uber from central Foz to Ponte da Amizade should cost R$15–R$60 one way. A city bus should be under R$10.",
+    "",
+    `Traveler origin city (for context only): ${origin}`,
+    "Destination crossing point: Ponte da Amizade, from Foz do Iguaçu (BR) to Ciudad del Este (PY)",
+  ].join("\n");
+}
+
+export async function researchParaguayTransfer(
+  origin: string,
+): Promise<ParaguayTransferResult> {
+  return requestStructuredResearch<ParaguayTransferResult>({
+    schemaName: "paraguay_transfer_research",
+    schema: TRANSFER_RESEARCH_SCHEMA,
+    instructions:
+      "You are a rigorous travel analyst. Use live web search and only return sources you are highly confident are real and working.",
+    input: transferPrompt(origin),
+  });
 }
 
 export async function researchOverseasProduct(input: unknown) {
@@ -468,6 +673,12 @@ export async function researchOverseasProduct(input: unknown) {
     input: overseasPrompt(normalized, rates),
   });
 
+  // Recalculate BRL prices deterministically from priceLocal + priceCurrency
+  // so AI currency conversion errors don't propagate to the UI.
+  const correctedOffers = result.offers.map((offer) =>
+    recalcOfferBRL(offer, rates, normalized.brazilReferencePriceBRL),
+  );
+
   return {
     generatedAt: new Date().toISOString(),
     query: normalized.query,
@@ -475,7 +686,7 @@ export async function researchOverseasProduct(input: unknown) {
     brazilReferencePriceBRL: normalized.brazilReferencePriceBRL,
     summary: result.summary,
     recommendedOfferId: result.recommendedOfferId,
-    offers: result.offers,
+    offers: correctedOffers,
     warnings: result.warnings,
   } satisfies OverseasResearchResponse;
 }
@@ -483,6 +694,7 @@ export async function researchOverseasProduct(input: unknown) {
 export async function researchTicketWindows(
   input: unknown,
   rates: { usdToBrl: number; eurToBrl: number; fetchedAt: string },
+  paraguayTransfer?: ParaguayTransferResult,
 ) {
   const normalized = normalizeTripInput(input);
   const tickets = await requestStructuredResearch<TicketResearchModel>({
@@ -490,7 +702,7 @@ export async function researchTicketWindows(
     schema: TICKET_RESEARCH_SCHEMA,
     instructions:
       "You are a rigorous travel analyst. Use live web search, favor current sources, and return only the requested JSON schema.",
-    input: ticketPrompt(normalized, rates),
+    input: ticketPrompt(normalized, rates, paraguayTransfer),
   });
 
   return {
@@ -504,11 +716,13 @@ export async function researchLodgingStrategies(
   featuredTicket: TicketResearchOption,
   rates: { usdToBrl: number; eurToBrl: number; fetchedAt: string },
 ) {
+  const isParaguay = input.selectedOffer.region === "paraguay";
   return requestStructuredResearch<LodgingResearchModel>({
     schemaName: "shopping_trip_lodging_research",
     schema: LODGING_RESEARCH_SCHEMA,
-    instructions:
-      "You are a rigorous lodging analyst. Use live web search, favor current sources, and return only the requested JSON schema.",
+    instructions: isParaguay
+      ? "You are a Brazilian domestic travel specialist. The traveler is staying in Foz do Iguaçu, Brazil — a Brazilian city. Search booking platforms for hotels in Foz do Iguaçu (BR). Use search page URLs from booking.com, airbnb.com.br, or hotels.com — never deep-link to specific property pages as those URLs are unreliable. Return only the requested JSON schema."
+      : "You are a rigorous international lodging analyst. Use live web search, favor current sources, use search page URLs (never specific property deep-links which often 404), and return only the requested JSON schema.",
     input: lodgingPrompt(input, featuredTicket, rates),
   });
 }

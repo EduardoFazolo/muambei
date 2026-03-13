@@ -72,6 +72,18 @@ export const mercadoLivreAdapter: StoreAdapter = {
             return null;
           }
 
+          // Filter out sold-out or unavailable listings
+          const rootText = root.text().toLowerCase();
+          const isSoldOut =
+            root.find(".poly-component__sold-out").length > 0 ||
+            root.find("[class*='sold-out']").length > 0 ||
+            rootText.includes("esgotado") ||
+            rootText.includes("indisponível") ||
+            rootText.includes("sem estoque");
+          if (isSoldOut) {
+            return null;
+          }
+
           // Detect the "Internacional" (cross-border) badge.
           // ML renders it via .poly-component__cbt (the airplane/globe SVG pill)
           // and adds a visually-hidden <span>Internacional</span> for a11y.

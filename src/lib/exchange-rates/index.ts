@@ -1,18 +1,21 @@
 export type ExchangeRates = {
   usdToBrl: number;
   eurToBrl: number;
+  pygToBrl: number;
   fetchedAt: string;
 };
 
 type AwesomeApiResponse = {
   USDBRL?: { bid: string };
   EURBRL?: { bid: string };
+  PYGBRL?: { bid: string };
 };
 
 // Fallback rates in case the API is unavailable
 const FALLBACK_RATES: ExchangeRates = {
   usdToBrl: 5.7,
   eurToBrl: 6.2,
+  pygToBrl: 0.00078, // ~1 PYG = 0.00078 BRL (1 BRL ≈ 1,280 PYG)
   fetchedAt: new Date().toISOString(),
 };
 
@@ -28,7 +31,7 @@ export async function fetchExchangeRates(): Promise<ExchangeRates> {
 
   try {
     const response = await fetch(
-      "https://economia.awesomeapi.com.br/json/last/USD-BRL,EUR-BRL",
+      "https://economia.awesomeapi.com.br/json/last/USD-BRL,EUR-BRL,PYG-BRL",
       { signal: AbortSignal.timeout(5000) },
     );
 
@@ -40,6 +43,7 @@ export async function fetchExchangeRates(): Promise<ExchangeRates> {
 
     const usdToBrl = Number.parseFloat(data.USDBRL?.bid ?? "0");
     const eurToBrl = Number.parseFloat(data.EURBRL?.bid ?? "0");
+    const pygToBrl = Number.parseFloat(data.PYGBRL?.bid ?? "0") || FALLBACK_RATES.pygToBrl;
 
     if (!usdToBrl || !eurToBrl) {
       return FALLBACK_RATES;
@@ -48,6 +52,7 @@ export async function fetchExchangeRates(): Promise<ExchangeRates> {
     const rates: ExchangeRates = {
       usdToBrl,
       eurToBrl,
+      pygToBrl,
       fetchedAt: new Date().toISOString(),
     };
 

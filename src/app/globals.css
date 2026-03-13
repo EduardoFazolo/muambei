@@ -147,6 +147,7 @@ button:disabled { cursor: not-allowed; }
 .action-pill-primary:hover {
   background: var(--brand-700);
   border-color: var(--brand-700);
+  color: #fff;
   box-shadow: 0 4px 14px rgba(13,148,136,0.34);
 }
 

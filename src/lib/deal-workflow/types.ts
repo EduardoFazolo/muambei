@@ -93,6 +93,35 @@ export type TripPlanResponse = {
   warnings: string[];
 };
 
+export type LodgingResearchModel = {
+  summary: string;
+  bestLodgingId: string;
+  lodgingOptions: LodgingResearchOption[];
+  warnings: string[];
+};
+
+export type LodgingResearcher = (
+  ticket: TicketResearchOption,
+) => Promise<LodgingResearchModel>;
+
+export type LodgingRetryResult = {
+  lodging: LodgingResearchModel;
+  ticket: TicketResearchOption;
+  /** 0-based index into the sorted ticket list that succeeded */
+  attemptIndex: number;
+};
+
+export class LodgingNotFoundError extends Error {
+  readonly attemptsExhausted: number;
+  constructor(attemptsExhausted: number) {
+    super(
+      `Nenhuma opção de hospedagem encontrada após ${attemptsExhausted} tentativa(s).`,
+    );
+    this.name = "LodgingNotFoundError";
+    this.attemptsExhausted = attemptsExhausted;
+  }
+}
+
 export type OverseasWorkflowInput = {
   query: string;
   referenceProduct: string;

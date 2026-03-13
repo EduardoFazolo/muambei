@@ -331,6 +331,16 @@ function OverseasOfferCard({ offer, brazilReferencePriceBRL, selected, onSelect 
       {offer.caveats.length > 0 && (
         <p className="mt-1.5 text-xs text-[var(--ink-subtle)]">{offer.caveats.join(" · ")}</p>
       )}
+      {offer.sources.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1.5" onClick={(e) => e.stopPropagation()}>
+          {offer.sources.map((s) => (
+            <a key={s.url} href={s.url} target="_blank" rel="noreferrer"
+              className="action-pill text-[var(--brand-600)] hover:bg-[var(--brand-50)]">
+              {s.label} ↗
+            </a>
+          ))}
+        </div>
+      )}
     </article>
   );
 }
