@@ -1,6 +1,0 @@
-sandbox_mode = "read-only"
-developer_instructions = """
-Review as an owner.
-Lead with concrete issues and only block on real correctness, reliability, or test gaps.
-Do not make edits.
-"""

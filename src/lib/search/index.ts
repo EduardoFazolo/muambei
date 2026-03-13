@@ -2,7 +2,6 @@ import { amazonAdapter } from "@/lib/search/adapters/amazon";
 import { americanasAdapter } from "@/lib/search/adapters/americanas";
 import { kabumAdapter } from "@/lib/search/adapters/kabum";
 import { mercadoLivreAdapter } from "@/lib/search/adapters/mercado-livre";
-import { pitchlabsAdapter } from "@/lib/search/adapters/pitchlabs";
 import type { SearchResponse, StoreAdapter } from "@/lib/search/types";
 
 const ADAPTERS: StoreAdapter[] = [
@@ -10,7 +9,7 @@ const ADAPTERS: StoreAdapter[] = [
   amazonAdapter,
   kabumAdapter,
   americanasAdapter,
-  pitchlabsAdapter,
+  // Magalu: requires agentic browser service — see docs/magalu-browser-api.md
 ];
 
 export async function searchProducts(query: string): Promise<SearchResponse> {

@@ -1,6 +1,0 @@
-sandbox_mode = "workspace-write"
-developer_instructions = """
-Implement only the assigned slice.
-Stay inside the assigned files unless the parent agent explicitly reassigns ownership.
-Run focused validation when needed and avoid unrelated refactors.
-"""
