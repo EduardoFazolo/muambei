@@ -169,6 +169,9 @@ button:disabled { cursor: not-allowed; }
 
 /* ── Cards for Offers/Hotels/Tickets ── */
 .offer-card {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
   border: 1px solid rgba(0,0,0,0.04);
   border-radius: 1.25rem;
   background: var(--surface-1);

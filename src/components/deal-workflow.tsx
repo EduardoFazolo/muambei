@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 import type {
   OverseasMarketOffer,
@@ -103,6 +104,12 @@ const shortDate = new Intl.DateTimeFormat("pt-BR", {
 
 function emptyWorkflow<T>(): AsyncWorkflowState<T> {
   return { status: "idle", error: "", result: null, steps: [] };
+}
+
+function usePrevious<T>(value: T): T | undefined {
+  const ref = useRef<T>(value !== undefined ? value : (null as unknown as T));
+  useEffect(() => { ref.current = value; }, [value]);
+  return ref.current;
 }
 
 function initialTripBrief(): TripBrief {
@@ -426,14 +433,14 @@ function SearchOfferCard({ offer, selected, onSelect }: {
 }) {
   return (
     <article onClick={onSelect} className={`offer-card ${selected ? "offer-card-selected" : ""}`}>
-      <div className="flex items-center justify-between gap-2">
-        <p className="kicker text-[var(--ink-subtle)]">{offer.storeName}</p>
-        {selected && <span className="status-pill tone-active">selecionado</span>}
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <p className="kicker min-w-0 text-[var(--ink-subtle)]">{offer.storeName}</p>
+        {selected && <span className="status-pill shrink-0 tone-active">selecionado</span>}
       </div>
       <p className="mt-2 line-clamp-2 text-sm font-medium leading-5 text-[var(--ink-0)]">
         {offer.title}
       </p>
-      <div className="mt-3 flex items-end justify-between gap-2">
+      <div className="mt-3 flex flex-col items-start gap-2 sm:flex-row sm:items-end sm:justify-between">
         <p className="font-body text-[1.75rem] font-bold tracking-tight leading-none text-[var(--ink-0)]">
           {money.format(offer.price)}
         </p>
@@ -464,11 +471,11 @@ function OverseasOfferCard({ offer, brazilReferencePriceBRL, selected, onSelect,
 
   return (
     <article onClick={onSelect} className={`offer-card ${selected ? "offer-card-selected" : ""}`}>
-      <div className="flex items-start justify-between gap-2">
-        <p className="kicker text-[var(--brand-600)]">
+      <div className="flex flex-col items-start gap-2 sm:flex-row sm:justify-between">
+        <p className="kicker min-w-0 text-[var(--brand-600)]">
           {regionLabel(offer.region)} · {offer.city}
         </p>
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className="flex w-full flex-wrap items-center gap-1.5 sm:w-auto sm:justify-end">
           <EntryBadge region={offer.region} country={offer.country} />
           {selected && <span className="status-pill tone-active">selecionado</span>}
           <span className={`status-pill ${stepTone(confidenceTone)}`}>{confidenceLabel(offer.confidence)}</span>
@@ -480,18 +487,18 @@ function OverseasOfferCard({ offer, brazilReferencePriceBRL, selected, onSelect,
       </p>
       <p className="mt-0.5 text-xs text-[var(--ink-muted)]">{offer.storeName}</p>
 
-      <div className="mt-3 flex divide-x divide-[var(--surface-3)] rounded-xl overflow-hidden bg-[var(--surface-2)]">
-        <div className="flex-1 px-2.5 py-2">
+      <div className="mt-3 grid grid-cols-1 divide-y divide-[var(--surface-3)] rounded-xl bg-[var(--surface-2)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+        <div className="min-w-0 px-2.5 py-2">
           <p className="text-[9px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">Brasil</p>
-          <p className="mt-0.5 text-[12px] font-semibold text-[var(--ink-0)] whitespace-nowrap">{money.format(brazilReferencePriceBRL)}</p>
+          <p className="mt-0.5 text-[12px] font-semibold leading-tight text-[var(--ink-0)]">{money.format(brazilReferencePriceBRL)}</p>
         </div>
-        <div className="flex-1 px-2.5 py-2">
-          <p className="text-[9px] font-mono uppercase tracking-wider text-[var(--ink-subtle)] truncate">Fora ({offer.priceLocalDisplay})</p>
-          <p className="mt-0.5 text-[12px] font-semibold text-[var(--ink-0)] whitespace-nowrap">{money.format(offer.estimatedPriceBRL)}</p>
+        <div className="min-w-0 px-2.5 py-2">
+          <p className="text-[9px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">Fora ({offer.priceLocalDisplay})</p>
+          <p className="mt-0.5 text-[12px] font-semibold leading-tight text-[var(--ink-0)]">{money.format(offer.estimatedPriceBRL)}</p>
         </div>
-        <div className="flex-1 px-2.5 py-2">
+        <div className="min-w-0 px-2.5 py-2">
           <p className="text-[9px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">Economia</p>
-          <p className={`mt-0.5 text-[12px] font-semibold whitespace-nowrap ${savings > 0 ? "text-[var(--good)]" : "text-[var(--bad)]"}`}>
+          <p className={`mt-0.5 text-[12px] font-semibold leading-tight ${savings > 0 ? "text-[var(--good)]" : "text-[var(--bad)]"}`}>
             {money.format(savings)}
           </p>
         </div>
@@ -554,15 +561,15 @@ function TicketCard({ option, selected, onSelect }: {
         <p className="mt-1 text-xs text-[var(--ink-muted)]">{formatWindow(option)}</p>
         <p className="mt-0.5 text-[11px] text-[var(--ink-subtle)]">{option.displayPrice}</p>
       </button>
-      <div className="mt-3 flex items-center justify-between gap-3">
-        <p className="font-body text-4xl font-bold tracking-tight text-[var(--ink-0)]">
+      <div className="mt-3 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="font-body text-4xl font-bold tracking-tight text-[var(--ink-0)] sm:min-w-0">
           {money.format(option.estimatedRoundTripBRL)}
         </p>
         {onSelect && (
           <button
             type="button"
             onClick={onSelect}
-            className={`action-pill text-[11px] ${selected ? "action-pill-primary" : ""}`}
+            className={`action-pill min-h-11 w-full justify-center text-[11px] sm:min-h-0 sm:w-auto ${selected ? "action-pill-primary" : ""}`}
           >
             {selected ? "✓ selecionado" : "selecionar"}
           </button>
@@ -608,8 +615,8 @@ function LodgingCard({ option, selected, onSelect }: {
         <p className="mt-1.5 text-base font-semibold leading-snug text-[var(--ink-0)]">{option.area}</p>
         <p className="mt-0.5 text-xs text-[var(--ink-muted)]">{option.propertyStyle} · {option.nightlyDisplay}</p>
       </button>
-      <div className="mt-3 flex items-center justify-between gap-3">
-        <div>
+      <div className="mt-3 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="sm:min-w-0">
           <p className="font-body text-4xl font-bold tracking-tight text-[var(--ink-0)]">
             {money.format(option.estimatedTotalStayBRL)}
           </p>
@@ -619,7 +626,7 @@ function LodgingCard({ option, selected, onSelect }: {
           <button
             type="button"
             onClick={onSelect}
-            className={`action-pill text-[11px] ${selected ? "action-pill-primary" : ""}`}
+            className={`action-pill min-h-11 w-full justify-center text-[11px] sm:min-h-0 sm:w-auto ${selected ? "action-pill-primary" : ""}`}
           >
             {selected ? "✓ selecionado" : "selecionar"}
           </button>
@@ -779,6 +786,14 @@ function Scorecard({ brazilPrice, productPriceBRL, tripSpendBRL, savingsBRL, rec
 
 export function DealWorkflow() {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+
+  const prevStep = usePrevious(currentStep) ?? 1;
+  const direction = currentStep > prevStep ? 1 : -1;
+  const stepVariants = {
+    enter: (direction: number) => ({ x: direction > 0 ? 30 : -30, opacity: 0, filter: "blur(4px)" }),
+    center: { zIndex: 1, x: 0, opacity: 1, filter: "blur(0px)" },
+    exit: (direction: number) => ({ zIndex: 0, x: direction < 0 ? 30 : -30, opacity: 0, filter: "blur(4px)" })
+  };
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
   const [search, setSearch] = useState<{
@@ -1186,16 +1201,21 @@ export function DealWorkflow() {
           })}
         </nav>
 
-        {/* ── Step 1: Brazil search ── */}
-        {currentStep === 1 && (
-          <section className="step-panel">
-            <div className="mb-5 flex flex-wrap items-center gap-y-2 gap-x-3">
-              <StepBadge n={1} status={stepDone(1) ? "done" : "active"} />
-              <h2 className="font-display text-2xl sm:text-[1.75rem] font-semibold tracking-tight text-[var(--ink-0)] whitespace-nowrap">Busca no Brasil</h2>
-              {search.status === "loading" && (
-                <span className="ml-auto status-pill tone-active shrink-0">Buscando…</span>
-              )}
-            </div>
+        <div className="relative w-full">
+          <AnimatePresence mode="wait" custom={direction} initial={false}>
+            {/* ── Step 1: Brazil search ── */}
+            {currentStep === 1 && (
+              <motion.div key="step1" custom={direction} variants={stepVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.35, ease: [0.2, 0.8, 0.2, 1] }} className="w-full">
+                <section className="step-panel">
+                  <div className="mb-5 flex flex-wrap items-center gap-y-2 gap-x-3">
+                    <StepBadge n={1} status={stepDone(1) ? "done" : "active"} />
+                    <h2 className="font-display text-2xl sm:text-[1.75rem] font-semibold tracking-tight text-[var(--ink-0)] whitespace-nowrap">Busca no Brasil</h2>
+                    <AnimatePresence>
+                      {search.status === "loading" && (
+                        <motion.span initial={{ opacity: 0, scale: 0.9, x: 10 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, scale: 0.9, x: 10 }} transition={{ duration: 0.3, ease: [0.2, 0.8, 0.2, 1] }} className="ml-auto status-pill tone-active shrink-0">Buscando…</motion.span>
+                      )}
+                    </AnimatePresence>
+                  </div>
 
             <input
               value={query}
@@ -1292,23 +1312,27 @@ export function DealWorkflow() {
                 </div>
               </div>
             </div>
-          </section>
-        )}
+                </section>
+              </motion.div>
+            )}
 
-        {/* ── Step 2: Overseas research ── */}
-        {currentStep === 2 && (
-          <section className="step-panel">
-            <div className="mb-5 flex flex-wrap items-center gap-y-2 gap-x-3">
-              <StepBadge n={2} status={stepDone(2) ? "done" : "active"} />
-              <h2 className="font-display text-2xl sm:text-[1.75rem] font-semibold tracking-tight text-[var(--ink-0)] whitespace-nowrap">Pesquisa Internacional</h2>
-              {overseas.status === "running" && (
-                <span className="ml-auto status-pill tone-active shrink-0">Pesquisando…</span>
-              )}
-            </div>
+            {/* ── Step 2: Overseas research ── */}
+            {currentStep === 2 && (
+              <motion.div key="step2" custom={direction} variants={stepVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.35, ease: [0.2, 0.8, 0.2, 1] }} className="w-full">
+                <section className="step-panel">
+                  <div className="mb-5 flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-2">
+                    <StepBadge n={2} status={stepDone(2) ? "done" : "active"} />
+                    <h2 className="font-display text-2xl font-semibold tracking-tight text-[var(--ink-0)] sm:text-[1.75rem]">Pesquisa Internacional</h2>
+                    <AnimatePresence>
+                      {overseas.status === "running" && (
+                        <motion.span initial={{ opacity: 0, scale: 0.9, x: 10 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, scale: 0.9, x: 10 }} transition={{ duration: 0.3, ease: [0.2, 0.8, 0.2, 1] }} className="status-pill shrink-0 tone-active sm:ml-auto">Pesquisando…</motion.span>
+                      )}
+                    </AnimatePresence>
+                  </div>
 
             {/* Reference price chip */}
             {selectedBrazilOffer && (
-              <div className="mb-4 flex items-center gap-3 rounded-lg border border-[var(--line)] bg-[var(--surface-3)] px-3 py-2">
+              <div className="mb-4 flex flex-col items-stretch gap-3 rounded-lg border border-[var(--line)] bg-[var(--surface-3)] px-3 py-2 sm:flex-row sm:items-center">
                 <p className="text-xs text-[var(--ink-muted)]">
                   Referência Brasil:
                   <span className="ml-1.5 font-semibold text-[var(--ink-0)]">
@@ -1318,7 +1342,7 @@ export function DealWorkflow() {
                 <button
                   type="button"
                   onClick={() => setCurrentStep(1)}
-                  className="ml-auto action-pill py-1 px-2.5 h-auto text-[11px] text-[var(--ink-muted)] hover:text-[var(--ink-0)]"
+                  className="action-pill h-auto w-full justify-center px-2.5 py-1 text-[11px] text-[var(--ink-muted)] hover:text-[var(--ink-0)] sm:ml-auto sm:w-auto"
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                   alterar
@@ -1402,19 +1426,23 @@ export function DealWorkflow() {
                 )}
               </>
             )}
-          </section>
-        )}
+                </section>
+              </motion.div>
+            )}
 
-        {/* ── Step 3: Trip planning ── */}
-        {currentStep === 3 && (
-          <section className="step-panel">
-            <div className="mb-5 flex flex-wrap items-center gap-y-2 gap-x-3">
-              <StepBadge n={3} status={stepDone(3) ? "done" : "active"} />
-              <h2 className="font-display text-2xl sm:text-[1.75rem] font-semibold tracking-tight text-[var(--ink-0)] whitespace-nowrap">Planejar a Viagem</h2>
-              {trip.status === "running" && (
-                <span className="ml-auto status-pill tone-active shrink-0">Calculando…</span>
-              )}
-            </div>
+            {/* ── Step 3: Trip planning ── */}
+            {currentStep === 3 && (
+              <motion.div key="step3" custom={direction} variants={stepVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.35, ease: [0.2, 0.8, 0.2, 1] }} className="w-full">
+                <section className="step-panel">
+                  <div className="mb-5 flex flex-wrap items-center gap-y-2 gap-x-3">
+                    <StepBadge n={3} status={stepDone(3) ? "done" : "active"} />
+                    <h2 className="font-display text-2xl sm:text-[1.75rem] font-semibold tracking-tight text-[var(--ink-0)] whitespace-nowrap">Planejar a Viagem</h2>
+                    <AnimatePresence>
+                      {trip.status === "running" && (
+                        <motion.span initial={{ opacity: 0, scale: 0.9, x: 10 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, scale: 0.9, x: 10 }} transition={{ duration: 0.3, ease: [0.2, 0.8, 0.2, 1] }} className="ml-auto status-pill tone-active shrink-0">Calculando…</motion.span>
+                      )}
+                    </AnimatePresence>
+                  </div>
 
             {/* Context bar */}
             {selectedOverseasOffer && selectedBrazilOffer && (
@@ -1586,11 +1614,11 @@ export function DealWorkflow() {
                     </button>
                   </div>
                 </div>
-              </>
+                </section>
+              </motion.div>
             )}
-          </section>
-        )}
-
+          </AnimatePresence>
+        </div>
       </div>
       <footer className="py-6 text-center">
         <p className="text-xs text-[var(--ink-subtle)]">

@@ -2,6 +2,7 @@
   "name": "price-trip",
   "version": "0.1.0",
   "private": true,
+  "license": "SEE LICENSE IN LICENSE",
   "packageManager": "bun@1.3.4",
   "scripts": {
     "dev": "next dev",
@@ -11,6 +12,7 @@
   },
   "dependencies": {
     "cheerio": "^1.2.0",
+    "framer-motion": "^12.36.0",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3"

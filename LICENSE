@@ -1,0 +1,78 @@
+Price Trip Custom License 1.0
+
+Copyright (c) 2026 Eduardo Verona
+
+This is a source-available license. It is not an open source license.
+
+By using, copying, modifying, or distributing any part of this repository, you agree to the terms below.
+
+1. Definitions
+
+"Commercial Use" means any use primarily intended for or directed toward commercial advantage or monetary compensation, whether direct or indirect. Commercial Use includes, for example, selling, licensing, sublicensing, paid consulting deliverables, charging subscription fees, charging one-time fees, usage in a paid product or paid service, ad-supported distribution, affiliate monetization, lead-generation use, sponsorship-backed use, or internal use by a business in support of revenue-generating activity.
+
+"Commercial Algorithm Components" means only the code located in:
+
+- src/lib/search/
+- src/lib/deal-workflow/
+- src/lib/trip-research/
+
+"Restricted Components" means every other file, asset, route, interface, document, style, brand element, image, and code artifact in this repository that is not a Commercial Algorithm Component.
+
+"Free Use" means use in a way that is made available at no charge to end users and is not monetized directly or indirectly.
+
+2. License grant for Commercial Algorithm Components
+
+Subject to this license, you may use, copy, modify, distribute, and create derivative works of the Commercial Algorithm Components for any purpose, including Commercial Use, provided that:
+
+- this license and copyright notice are preserved in source distributions; and
+- you do not imply endorsement by the copyright holder.
+
+3. License grant for Restricted Components
+
+Subject to this license, you may use, copy, modify, distribute, and create derivative works of the Restricted Components only for Free Use and other non-commercial purposes such as personal learning, research, evaluation, or internal experimentation.
+
+You may not use any Restricted Component for Commercial Use without prior written permission from the copyright holder.
+
+4. Combined works
+
+If you create a larger work, application, service, or derivative that includes both Commercial Algorithm Components and Restricted Components, the Restricted Components remain governed by Section 3.
+
+As a result, you may not commercially use, sell, host for profit, or otherwise monetize that combined work unless:
+
+- you remove or replace all Restricted Components; or
+- you obtain prior written permission from the copyright holder.
+
+5. Examples for clarity
+
+Allowed without extra permission:
+
+- using the code in src/lib/search/ inside a paid crawler product;
+- adapting the code in src/lib/deal-workflow/ for a paid agent system;
+- reusing the code in src/lib/trip-research/ in a commercial research workflow.
+
+Not allowed without extra permission:
+
+- selling or monetizing the UI, routes, app shell, styles, assets, branding, or full application as included in this repository;
+- deploying the full repository as a paid SaaS;
+- using the non-exempt frontend or app code in a paid client project;
+- charging for access to a hosted version that includes any Restricted Component.
+
+6. Redistribution
+
+If you redistribute source code or substantial portions of the repository, you must include this license text.
+
+7. No trademark rights
+
+This license does not grant any right to use the project name, logos, trade dress, or branding except as necessary for accurate attribution.
+
+8. Termination
+
+Any rights granted under this license terminate automatically if you violate its terms. If the violation is cured and the copyright holder has not separately terminated your rights in writing, your rights may be reinstated at the copyright holder's discretion.
+
+9. No warranty
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT.
+
+10. Limitation of liability
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OF THE SOFTWARE OR OTHER DEALINGS IN THE SOFTWARE.
