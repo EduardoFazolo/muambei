@@ -40,7 +40,7 @@ export const kabumAdapter: StoreAdapter = {
       const nextData = JSON.parse(match[1]) as {
         props?: {
           pageProps?: {
-            data?: string;
+            data?: string | KabumPayload;
           };
         };
       };
@@ -49,7 +49,8 @@ export const kabumAdapter: StoreAdapter = {
         throw new Error("Payload catalogServer ausente.");
       }
 
-      const payload = JSON.parse(nextData.props.pageProps.data) as KabumPayload;
+      const raw = nextData.props.pageProps.data;
+      const payload = (typeof raw === "string" ? JSON.parse(raw) : raw) as KabumPayload;
       const offers =
         payload.catalogServer?.data?.map((item) => {
           const price = item.priceWithDiscount ?? item.price;

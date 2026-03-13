@@ -10,7 +10,7 @@ type PitchlabsPayload = SearchOffer[] | { offers?: SearchOffer[] };
 
 export const pitchlabsAdapter: StoreAdapter = {
   storeKey: "pitchlabs-magalu",
-  storeName: "Magalu via Pitchlabs",
+  storeName: "Magalu",
   async search(query) {
     const startedAt = Date.now();
     const template = process.env.PITCHLABS_COMMAND;
