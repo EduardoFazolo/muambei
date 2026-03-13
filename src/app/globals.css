@@ -185,7 +185,8 @@ button:disabled { cursor: not-allowed; }
   background: var(--surface-1);
 }
 
-.offer-card-selected {
+.offer-card-selected,
+.offer-card-selected:hover {
   border-color: transparent !important;
   background: var(--brand-50);
   box-shadow: 0 0 0 2px var(--brand-500) inset, 0 12px 32px rgba(230, 53, 11, 0.12);
@@ -327,7 +328,7 @@ button:disabled { cursor: not-allowed; }
   margin-top: 2.5rem;
   padding: 1.5rem;
   border-top: 1px solid rgba(0,0,0,0.06);
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border-radius: 0 0 2rem 2rem;
@@ -359,11 +360,11 @@ button:disabled { cursor: not-allowed; }
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem 2rem;
+  padding: 0.625rem 1.25rem;
   border-radius: 999px;
   background: var(--brand-600);
   color: #fff;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   border: none;

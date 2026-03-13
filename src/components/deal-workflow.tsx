@@ -387,18 +387,18 @@ function OverseasOfferCard({ offer, brazilReferencePriceBRL, selected, onSelect,
       </p>
       <p className="mt-0.5 text-xs text-[var(--ink-muted)]">{offer.storeName}</p>
 
-      <div className="mt-3 grid grid-cols-3 gap-3">
-        <div className="metric-box">
-          <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">Brasil</p>
-          <p className="mt-1 text-sm font-semibold text-[var(--ink-0)]">{money.format(brazilReferencePriceBRL)}</p>
+      <div className="mt-3 flex divide-x divide-[var(--surface-3)] rounded-xl overflow-hidden bg-[var(--surface-2)]">
+        <div className="flex-1 px-2.5 py-2">
+          <p className="text-[9px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">Brasil</p>
+          <p className="mt-0.5 text-[12px] font-semibold text-[var(--ink-0)] whitespace-nowrap">{money.format(brazilReferencePriceBRL)}</p>
         </div>
-        <div className="metric-box">
-          <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">Exterior ({offer.priceLocalDisplay})</p>
-          <p className="mt-1 text-sm font-semibold text-[var(--ink-0)]">{money.format(offer.estimatedPriceBRL)}</p>
+        <div className="flex-1 px-2.5 py-2">
+          <p className="text-[9px] font-mono uppercase tracking-wider text-[var(--ink-subtle)] truncate">Fora ({offer.priceLocalDisplay})</p>
+          <p className="mt-0.5 text-[12px] font-semibold text-[var(--ink-0)] whitespace-nowrap">{money.format(offer.estimatedPriceBRL)}</p>
         </div>
-        <div className="metric-box">
-          <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">Economia</p>
-          <p className={`mt-1 text-sm font-semibold ${savings > 0 ? "text-[var(--good)]" : "text-[var(--bad)]"}`}>
+        <div className="flex-1 px-2.5 py-2">
+          <p className="text-[9px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">Economia</p>
+          <p className={`mt-0.5 text-[12px] font-semibold whitespace-nowrap ${savings > 0 ? "text-[var(--good)]" : "text-[var(--bad)]"}`}>
             {money.format(savings)}
           </p>
         </div>
@@ -628,48 +628,38 @@ function Scorecard({ brazilPrice, productPriceBRL, tripSpendBRL, savingsBRL, rec
 
       <p className="mt-2 text-sm leading-6 text-[var(--ink-muted)]">{recommendation}</p>
 
-      {/* Top row: main comparison */}
-      <div className="mt-4 grid grid-cols-2 gap-2.5">
-        {/* Brasil — muted baseline */}
-        <div className="rounded-2xl bg-[var(--surface-2)] p-4 shadow-sm">
-          <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">Comprar no Brasil</p>
-          <p className="mt-2 font-display text-2xl text-[var(--ink-0)]">
-            {brazilPrice !== null ? money.format(brazilPrice) : "—"}
-          </p>
-        </div>
-
-        {/* Viagem total — prominent */}
-        <div className="rounded-2xl bg-[var(--surface-1)] p-4 relative overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.06),0_2px_8px_rgba(230,53,11,0.04)]">
-          <div className="absolute top-0 inset-x-0 h-1.5 bg-[var(--brand-500)]"></div>
-          <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--brand-600)]">Viagem completa</p>
-          <p className="mt-2 font-display text-2xl text-[var(--ink-0)]">{money.format(tripSpendBRL)}</p>
-          <p className="mt-1 text-[10px] text-[var(--ink-subtle)]">produto + passagem + hotel</p>
-        </div>
-      </div>
-
-      {/* Bottom row: hero savings + product breakdown */}
-      <div className="mt-2.5 grid grid-cols-3 gap-2.5">
-        {/* Produto fora — small detail */}
-        <div className="rounded-2xl bg-[var(--surface-2)] p-4 shadow-sm">
-          <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">Produto fora</p>
-          <p className="mt-2 text-base font-semibold text-[var(--ink-0)]">{money.format(productPriceBRL)}</p>
-        </div>
-
-        {/* Ganho/perda — hero, spans 2 cols */}
-        <div className={`col-span-2 rounded-2xl p-4 shadow-[0_4px_16px_rgba(0,0,0,0.04)] ${
-          positive
-            ? "bg-[#EAF9F0]"
-            : "bg-[#FFEBEA]"
-        }`}>
+      <div className="mt-4 space-y-2.5">
+        {/* Hero savings — full width so the big number always fits */}
+        <div className={`rounded-2xl p-4 shadow-[0_4px_16px_rgba(0,0,0,0.04)] ${positive ? "bg-[#EAF9F0]" : "bg-[#FFEBEA]"}`}>
           <p className={`text-[10px] font-mono uppercase tracking-wider ${positive ? "text-[var(--good)]" : "text-[var(--bad)]"}`}>
             {positive ? "Você economiza" : "Você paga a mais"}
           </p>
-          <p className={`mt-2 font-body text-[2.5rem] leading-none font-bold tracking-tight ${positive ? "text-[var(--good)]" : "text-[var(--bad)]"}`}>
+          <p className={`mt-1.5 font-bold text-[2.5rem] leading-none tracking-tight ${positive ? "text-[var(--good)]" : "text-[var(--bad)]"}`}>
             {money.format(Math.abs(savingsBRL))}
           </p>
-          <p className={`mt-1 text-[10px] ${positive ? "text-[var(--good)]" : "text-[var(--bad)]"}`}>
-            vs. comprar no Brasil
-          </p>
+          <p className={`mt-1 text-[10px] ${positive ? "text-[var(--good)]" : "text-[var(--bad)]"}`}>vs. comprar no Brasil</p>
+        </div>
+
+        {/* Comparison row */}
+        <div className="grid grid-cols-2 gap-2.5">
+          <div className="rounded-2xl bg-[var(--surface-2)] p-4 shadow-sm">
+            <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">No Brasil</p>
+            <p className="mt-2 font-display text-xl text-[var(--ink-0)]">
+              {brazilPrice !== null ? money.format(brazilPrice) : "—"}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-[var(--surface-1)] p-4 relative overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.06),0_2px_8px_rgba(230,53,11,0.04)]">
+            <div className="absolute top-0 inset-x-0 h-1.5 bg-[var(--brand-500)]" />
+            <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--brand-600)]">Viagem completa</p>
+            <p className="mt-2 font-display text-xl text-[var(--ink-0)]">{money.format(tripSpendBRL)}</p>
+            <p className="mt-1 text-[10px] text-[var(--ink-subtle)]">produto + passagem + hotel</p>
+          </div>
+        </div>
+
+        {/* Produto fora — subtle footnote row */}
+        <div className="rounded-2xl bg-[var(--surface-2)] px-4 py-3 flex items-center justify-between">
+          <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-subtle)]">Produto fora</p>
+          <p className="text-sm font-semibold text-[var(--ink-0)]">{money.format(productPriceBRL)}</p>
         </div>
       </div>
 
@@ -1397,22 +1387,6 @@ export function DealWorkflow() {
                       value={tripBrief.tripLengthNights}
                       onChange={(e) => setTripBrief((c) => ({ ...c, tripLengthNights: e.target.value }))}
                       className="field-input mt-1.5"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="kicker text-[var(--ink-subtle)]">Hospedagem</span>
-                    <textarea
-                      value={tripBrief.stayPreference}
-                      onChange={(e) => setTripBrief((c) => ({ ...c, stayPreference: e.target.value }))}
-                      className="field-input mt-1.5 min-h-[80px] resize-y py-2.5"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="kicker text-[var(--ink-subtle)]">Prioridades</span>
-                    <textarea
-                      value={tripBrief.priorities}
-                      onChange={(e) => setTripBrief((c) => ({ ...c, priorities: e.target.value }))}
-                      className="field-input mt-1.5 min-h-[80px] resize-y py-2.5"
                     />
                   </label>
                 </div>
