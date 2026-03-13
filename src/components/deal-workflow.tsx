@@ -345,7 +345,9 @@ function OverseasOfferCard({ offer, brazilReferencePriceBRL, selected, onSelect 
   );
 }
 
-function TicketCard({ option, selected }: { option: TicketResearchOption; selected: boolean }) {
+function TicketCard({ option, selected, onSelect }: {
+  option: TicketResearchOption; selected: boolean; onSelect?: () => void;
+}) {
   const [expanded, setExpanded] = useState(false);
   const confidenceTone =
     option.confidence === "high" ? "completed" :
@@ -353,25 +355,32 @@ function TicketCard({ option, selected }: { option: TicketResearchOption; select
 
   return (
     <article className={`offer-card ${selected ? "offer-card-selected" : ""}`}>
-      <button
-        type="button"
-        onClick={() => setExpanded((v) => !v)}
-        className="w-full text-left"
-      >
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <p className="kicker text-[var(--brand-600)]">{selected ? "Melhor janela" : "Alternativa"}</p>
-            <p className="mt-1 line-clamp-1 text-sm font-semibold text-[var(--ink-0)]">{option.title}</p>
-            <p className="mt-0.5 text-xs text-[var(--ink-muted)]">{formatWindow(option)}</p>
-          </div>
-          <div className="shrink-0 text-right">
-            <p className="font-display text-2xl leading-none text-[var(--ink-0)]">
-              {money.format(option.estimatedRoundTripBRL)}
-            </p>
-            <p className="mt-0.5 text-[10px] text-[var(--ink-subtle)]">{option.displayPrice}</p>
-          </div>
+      <div className="flex items-start justify-between gap-3">
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="min-w-0 flex-1 text-left"
+        >
+          <p className="kicker text-[var(--brand-600)]">{selected ? "Melhor janela" : "Alternativa"}</p>
+          <p className="mt-1 line-clamp-1 text-sm font-semibold text-[var(--ink-0)]">{option.title}</p>
+          <p className="mt-0.5 text-xs text-[var(--ink-muted)]">{formatWindow(option)}</p>
+        </button>
+        <div className="shrink-0 flex flex-col items-end gap-2">
+          <p className="font-display text-2xl leading-none text-[var(--ink-0)]">
+            {money.format(option.estimatedRoundTripBRL)}
+          </p>
+          <p className="text-[10px] text-[var(--ink-subtle)]">{option.displayPrice}</p>
+          {onSelect && (
+            <button
+              type="button"
+              onClick={onSelect}
+              className={`action-pill text-[11px] ${selected ? "action-pill-primary" : ""}`}
+            >
+              {selected ? "✓ selecionado" : "selecionar"}
+            </button>
+          )}
         </div>
-      </button>
+      </div>
 
       {expanded && (
         <div className="mt-3 border-t border-[var(--line)] pt-3 space-y-2">
@@ -393,37 +402,42 @@ function TicketCard({ option, selected }: { option: TicketResearchOption; select
   );
 }
 
-function LodgingCard({ option, selected }: {
-  option: TripPlanResponse["lodgingOptions"][number]; selected: boolean;
+function LodgingCard({ option, selected, onSelect }: {
+  option: TripPlanResponse["lodgingOptions"][number]; selected: boolean; onSelect?: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const confidenceTone =
     option.confidence === "high" ? "completed" :
     option.confidence === "medium" ? "running" : "pending";
 
-  const nightlyBRL = Math.round(option.estimatedTotalStayBRL / Math.max(1, Number.parseInt(option.nightlyDisplay) || 1));
-
   return (
     <article className={`offer-card ${selected ? "offer-card-selected" : ""}`}>
-      <button
-        type="button"
-        onClick={() => setExpanded((v) => !v)}
-        className="w-full text-left"
-      >
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <p className="kicker text-[var(--brand-600)]">{selected ? "Base principal" : "Alternativa"}</p>
-            <p className="mt-1 text-sm font-semibold text-[var(--ink-0)]">{option.area}</p>
-            <p className="mt-0.5 text-xs text-[var(--ink-muted)]">{option.propertyStyle}</p>
-          </div>
-          <div className="shrink-0 text-right">
-            <p className="font-display text-2xl leading-none text-[var(--ink-0)]">
-              {money.format(option.estimatedTotalStayBRL)}
-            </p>
-            <p className="mt-0.5 text-[10px] text-[var(--ink-subtle)]">total da estadia</p>
-          </div>
+      <div className="flex items-start justify-between gap-3">
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="min-w-0 flex-1 text-left"
+        >
+          <p className="kicker text-[var(--brand-600)]">{selected ? "Base principal" : "Alternativa"}</p>
+          <p className="mt-1 text-sm font-semibold text-[var(--ink-0)]">{option.area}</p>
+          <p className="mt-0.5 text-xs text-[var(--ink-muted)]">{option.propertyStyle}</p>
+        </button>
+        <div className="shrink-0 flex flex-col items-end gap-2">
+          <p className="font-display text-2xl leading-none text-[var(--ink-0)]">
+            {money.format(option.estimatedTotalStayBRL)}
+          </p>
+          <p className="text-[10px] text-[var(--ink-subtle)]">total da estadia</p>
+          {onSelect && (
+            <button
+              type="button"
+              onClick={onSelect}
+              className={`action-pill text-[11px] ${selected ? "action-pill-primary" : ""}`}
+            >
+              {selected ? "✓ selecionado" : "selecionar"}
+            </button>
+          )}
         </div>
-      </button>
+      </div>
 
       {expanded && (
         <div className="mt-3 border-t border-[var(--line)] pt-3 space-y-2">
@@ -580,6 +594,8 @@ export function DealWorkflow() {
   const [tripBrief, setTripBrief] = useState<TripBrief>(initialTripBrief);
   const [overseas, setOverseas] = useState<AsyncWorkflowState<OverseasResearchResponse>>(() => emptyWorkflow());
   const [trip, setTrip] = useState<AsyncWorkflowState<TripPlanResponse>>(() => emptyWorkflow());
+  const [selectedTicketId, setSelectedTicketId] = useState("");
+  const [selectedLodgingId, setSelectedLodgingId] = useState("");
   const searchAbortRef   = useRef<AbortController | null>(null);
   const overseasAbortRef = useRef<AbortController | null>(null);
   const tripAbortRef     = useRef<AbortController | null>(null);
@@ -741,6 +757,8 @@ export function DealWorkflow() {
           }));
         },
         onResult: (result) => {
+          setSelectedTicketId(result.bestTicketId);
+          setSelectedLodgingId(result.bestLodgingId);
           setTrip((c) => ({ ...c, status: "ready", result }));
         },
       });
@@ -762,6 +780,37 @@ export function DealWorkflow() {
   const hasSearchResults  = Boolean(search.results?.offers.length);
   const brazilBestPrice   = search.results?.offers[0]?.price ?? null;
   const tripResult        = trip.result;
+
+  // Active ticket/lodging selection — initialized from best IDs, user can override
+  const activeTicket = useMemo(() => {
+    if (!tripResult) return null;
+    return (
+      tripResult.ticketOptions.find((t) => t.id === selectedTicketId) ??
+      tripResult.ticketOptions.find((t) => t.id === tripResult.bestTicketId) ??
+      tripResult.ticketOptions[0] ?? null
+    );
+  }, [tripResult, selectedTicketId]);
+
+  const activeLodging = useMemo(() => {
+    if (!tripResult) return null;
+    return (
+      tripResult.lodgingOptions.find((l) => l.id === selectedLodgingId) ??
+      tripResult.lodgingOptions.find((l) => l.id === tripResult.bestLodgingId) ??
+      tripResult.lodgingOptions[0] ?? null
+    );
+  }, [tripResult, selectedLodgingId]);
+
+  // Recalculate totals whenever the user picks a different ticket or lodging
+  const activeTripSpend = useMemo(() => {
+    if (!tripResult || !activeTicket || !activeLodging) return tripResult?.estimatedTripSpendBRL ?? 0;
+    return tripResult.productPriceBRL + activeTicket.estimatedRoundTripBRL + activeLodging.estimatedTotalStayBRL;
+  }, [tripResult, activeTicket, activeLodging]);
+
+  const activeSavings = useMemo(() => {
+    if (!tripResult) return 0;
+    const brazilRef = selectedBrazilOffer?.price ?? tripResult.productPriceBRL;
+    return brazilRef - activeTripSpend;
+  }, [tripResult, activeTripSpend, selectedBrazilOffer]);
 
   const canGoTo = (step: 1 | 2 | 3): boolean => {
     if (step === 1) return true;
@@ -1120,9 +1169,13 @@ export function DealWorkflow() {
                 <Scorecard
                   brazilPrice={selectedBrazilOffer?.price ?? null}
                   productPriceBRL={tripResult.productPriceBRL}
-                  tripSpendBRL={tripResult.estimatedTripSpendBRL}
-                  savingsBRL={tripResult.estimatedSavingsVsBrazilBRL}
-                  recommendation={tripResult.recommendation}
+                  tripSpendBRL={activeTripSpend}
+                  savingsBRL={activeSavings}
+                  recommendation={
+                    activeSavings > 0
+                      ? "A viagem ainda pode valer financeiramente se você conseguir fechar o produto e a janela sugeridos."
+                      : "Com os custos atuais, a viagem parece mais cara do que comprar no Brasil, a menos que existam outros motivos para ir."
+                  }
                   warnings={tripResult.warnings}
                 />
 
@@ -1145,7 +1198,12 @@ export function DealWorkflow() {
                   </div>
                   <div className="space-y-3">
                     {tripResult.ticketOptions.map((opt) => (
-                      <TicketCard key={opt.id} option={opt} selected={opt.id === tripResult.bestTicketId} />
+                      <TicketCard
+                        key={opt.id}
+                        option={opt}
+                        selected={opt.id === (activeTicket?.id ?? tripResult.bestTicketId)}
+                        onSelect={() => setSelectedTicketId(opt.id)}
+                      />
                     ))}
                   </div>
                 </div>
@@ -1158,7 +1216,12 @@ export function DealWorkflow() {
                   </div>
                   <div className="space-y-3">
                     {tripResult.lodgingOptions.map((opt) => (
-                      <LodgingCard key={opt.id} option={opt} selected={opt.id === tripResult.bestLodgingId} />
+                      <LodgingCard
+                        key={opt.id}
+                        option={opt}
+                        selected={opt.id === (activeLodging?.id ?? tripResult.bestLodgingId)}
+                        onSelect={() => setSelectedLodgingId(opt.id)}
+                      />
                     ))}
                   </div>
                 </div>
