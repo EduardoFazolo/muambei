@@ -24,7 +24,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Price Trip | Produto, exterior e viagem no mesmo fluxo",
+  title: "Muambei | Produto, exterior e viagem no mesmo fluxo",
   description:
     "Pesquise o produto no Brasil, compare precos fora do pais e so depois rode o workflow completo de viagem.",
 };

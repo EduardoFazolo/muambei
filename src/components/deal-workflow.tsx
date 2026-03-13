@@ -1050,7 +1050,7 @@ export function DealWorkflow() {
 
         {/* ── Header ── */}
         <header className="relative mb-8 text-center">
-          <p className="kicker text-[var(--brand-600)]">Price Trip</p>
+          <p className="kicker text-[var(--brand-600)]">Muambei</p>
           <h1 className="mt-2 font-display text-4xl text-[var(--ink-0)] sm:text-5xl">
             Vale a viagem?
           </h1>
@@ -1161,7 +1161,7 @@ export function DealWorkflow() {
             <div className="step-cta">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-[11px] uppercase tracking-widest text-[var(--ink-subtle)]">
-                  {selectedBrazilOffer ? "Oferta selecionada" : "Price Trip"}
+                  {selectedBrazilOffer ? "Oferta selecionada" : "Muambei"}
                 </p>
                   <button
                     type="button"
@@ -1526,6 +1526,9 @@ export function DealWorkflow() {
           {" · "}
           <a href="https://www.linkedin.com/in/eduardofazoloverona/" target="_blank" rel="noreferrer"
             className="hover:text-[var(--brand-600)] underline-offset-2 hover:underline">LinkedIn</a>
+          {" · "}
+          <a href="https://x.com/edfazolo" target="_blank" rel="noreferrer"
+            className="hover:text-[var(--brand-600)] underline-offset-2 hover:underline">Twitter</a>
           {" · "}
           <a href="https://github.com/EduardoFazolo" target="_blank" rel="noreferrer"
             className="hover:text-[var(--brand-600)] underline-offset-2 hover:underline">GitHub</a>
